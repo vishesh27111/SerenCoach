@@ -18,7 +18,10 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
   late Animation<double> _avatarAnimation;
   late Animation<double> _questionAnimation;
 
-  final String apiUrl = 'https://4bc5-47-55-121-22.ngrok-free.app/therapist'; // Replace with your actual API URL
+  final String apiUrl = 'https://6103-47-55-121-22.ngrok-free.app/therapist'; // Update to actual API URL
+
+  String _currentQuestion = "How are you feeling today?"; // Initial question
+  List<Map<String, dynamic>> _responseHistory = []; // To store all API responses
 
   @override
   void initState() {
@@ -66,29 +69,70 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
 
   void _submitResponse() async {
     if (_recordedText.isNotEmpty) {
+      // Prepare the request body
+      var requestBody = {
+        "question": _currentQuestion,
+        "answer": _recordedText
+      };
+
       // Make API call
       var response = await http.post(
         Uri.parse(apiUrl),
         headers: {"Content-Type": "application/json"},
-        body: json.encode({"response": _recordedText}),
+        body: json.encode(requestBody),
       );
 
-      // Handle API response and navigate to the next page
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Detection(
-              anxiety: data['anxiety']!,
-              depression: data['depression']!,
+
+        // Store the response in history
+        _responseHistory.add(data);
+
+        // Check if both anxiety and depression have enough confidence
+        double anxietyConfidence = data['anxiety_confidence'] ?? 0;
+        double depressionConfidence = data['depression_confidence'] ?? 0;
+
+        // Check if either confidence score is below 0.9
+        if ((anxietyConfidence < 0.65 || depressionConfidence < 0.65)) {
+          // Ask the follow-up question if confidence is low
+          String followUpQuestion = data['follow_up'] ?? '';
+
+          if (followUpQuestion.isNotEmpty) {
+            setState(() {
+              _recordedText = ''; // Clear previous response
+            });
+
+            // Animate the transition to the next question
+            _animateQuestionChange(followUpQuestion);
+          }
+        } else {
+          // Confidence is high enough, proceed to result display page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Detection(
+                anxiety: data['anxiety'],
+                depression: data['depression'],
+              ),
             ),
-          ),
-        );
+          );
+        }
       } else {
         print('Failed to get API response');
       }
     }
+  }
+
+  void _animateQuestionChange(String newQuestion) async {
+    // Animate the fade-out of the current question
+    await _controller.reverse();
+
+    // Update the question and start the fade-in animation
+    setState(() {
+      _currentQuestion = newQuestion;
+    });
+
+    _controller.forward();  // Start the animation again for the new question
   }
 
   @override
@@ -130,7 +174,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
               FadeTransition(
                 opacity: _questionAnimation,
                 child: Text(
-                  'Hey Ruby, how are you feeling today?',
+                  _currentQuestion, // Display current question
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontSize: 24,
@@ -146,14 +190,12 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                 onTap: _toggleRecording,
                 child: Column(
                   children: [
-                    // Mic icon color changes based on isRecording state
                     Icon(
                       Icons.mic,
                       size: 60,
                       color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
                     ),
                     SizedBox(height: 10),
-                    // Text updates based on isRecording state
                     Text(
                       isRecording ? 'Recording...' : 'Tap to speak',
                       style: TextStyle(

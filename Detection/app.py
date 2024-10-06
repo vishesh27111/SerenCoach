@@ -10,12 +10,11 @@ app = Flask(__name__)
 app.config['SERVER_NAME'] = None
 CORS(app)
 app.config['WTF_CSRF_ENABLED'] = False
-
 # Define the updated prompt template with question, answer, and confidence handling
 template = """
 Classify the level of anxiety and depression either high, low or medium from the following question and answer.
 Also, provide a confidence score on the scale of 0.00 to 1.00 for both anxiety and depression predictions.
-If the confidence score for either prediction is low ( less than 0.60 ), suggest a follow-up question to gather more information.
+Give a follow-up question to gather more information related to the answer.
 Respond only with a JSON dictionary and nothing else.
 
 Question: {question}
@@ -45,7 +44,10 @@ chain = prompt | model
 def classify_response():
     logging.debug("Received request to /therapist")
     try:
+        # Log the received request body
         data = request.get_json(force=True, silent=True)
+        logging.debug(f"Request body: {data}")
+
         if not data:
             return jsonify({"error": "Invalid JSON in request body"}), 400
 
@@ -66,15 +68,20 @@ def classify_response():
             json_response = result[json_start:json_end]
             parsed_result = json.loads(json_response)
 
+            # Log the generated response before sending it
+            logging.debug(f"Generated response: {parsed_result}")
+
             # Return the parsed JSON as the API response
             return jsonify(parsed_result)
 
         except json.JSONDecodeError as json_error:
-            return jsonify({"error": f"JSON parsing error: {str(json_error)}", "raw_result": result}), 400
+            error_message = f"JSON parsing error: {str(json_error)}"
+            logging.error(error_message)
+            return jsonify({"error": error_message, "raw_result": result}), 400
         except ValueError as value_error:
-            return jsonify({"error": f"Value error: {str(value_error)}", "raw_result": result}), 400
-
-        logging.debug(f"Model result: {result}")
+            error_message = f"Value error: {str(value_error)}"
+            logging.error(error_message)
+            return jsonify({"error": error_message, "raw_result": result}), 400
 
     except Exception as model_error:
         logging.error(f"Error in classify_response: {str(model_error)}")

@@ -15,6 +15,12 @@ template = """
 Classify the level of anxiety and depression either high, low or medium from the following question and answer.
 Also, provide a confidence score on the scale of 0.00 to 1.00 for both anxiety and depression predictions.
 Give a follow-up question to gather more information related to the answer.
+Suggest activities in an array format to help with the level of anxiety and depression based on your classification. 
+The activities can be practical, context-specific based on the user's answer, and can also include general suggestions like walking, reading, or listening to music.
+The array should contain nested objects which have keys "activity" and "description".
+The activity should name the activity to do in 3-4 words maximum. For eg - "Walk", "Practice mindfulness".
+The description should have a description in one line of what to do for the activity.
+
 Respond only with a JSON dictionary and nothing else.
 
 Question: {question}
@@ -26,9 +32,11 @@ Return the JSON dictionary in the following format:
   "anxiety_confidence": <confidence_value>,
   "depression": "<level>",
   "depression_confidence": <confidence_value>,
-  "follow_up": "<question_if_needed>"
+  "follow_up": "<question_if_needed>",
+  "suggested_activities": ["<activity_1>", "<activity_2>", "<activity_3>", ...]
 }}
 """
+
 
 # Create the prompt template
 prompt = ChatPromptTemplate.from_template(template)

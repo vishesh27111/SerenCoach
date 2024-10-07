@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // To handle JSON
-
 import 'detection.dart'; // For navigating to the next page
 
 class TherapistPage extends StatefulWidget {
@@ -18,10 +17,10 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
   late Animation<double> _avatarAnimation;
   late Animation<double> _questionAnimation;
 
-  final String apiUrl = 'https://6103-47-55-121-22.ngrok-free.app/therapist'; // Update to actual API URL
+  final String apiUrl = 'https://ab35-47-55-121-22.ngrok-free.app/therapist'; // Update to actual API URL
 
   String _currentQuestion = "How are you feeling today?"; // Initial question
-  List<Map<String, dynamic>> _responseHistory = []; // To store all API responses
+  List<Map<String, String>> _conversationHistory = []; // To store questions and answers
 
   @override
   void initState() {
@@ -69,6 +68,9 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
 
   void _submitResponse() async {
     if (_recordedText.isNotEmpty) {
+      // Add the question and answer to the conversation history
+      _conversationHistory.add({"question": _currentQuestion, "answer": _recordedText});
+
       // Prepare the request body
       var requestBody = {
         "question": _currentQuestion,
@@ -85,16 +87,10 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
 
-        // Store the response in history
-        _responseHistory.add(data);
-
-        // Check if both anxiety and depression have enough confidence
         double anxietyConfidence = data['anxiety_confidence'] ?? 0;
         double depressionConfidence = data['depression_confidence'] ?? 0;
 
-        // Check if either confidence score is below 0.9
-        if ((anxietyConfidence < 0.65 || depressionConfidence < 0.65)) {
-          // Ask the follow-up question if confidence is low
+        if ((anxietyConfidence < 0.5 || depressionConfidence < 0.5)) {
           String followUpQuestion = data['follow_up'] ?? '';
 
           if (followUpQuestion.isNotEmpty) {
@@ -106,16 +102,35 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
             _animateQuestionChange(followUpQuestion);
           }
         } else {
-          // Confidence is high enough, proceed to result display page
+          // Get the suggested activities from API
+          List<Map<String, String>> suggestedActivities = data['suggested_activities'] != null
+              ? List<Map<String, String>>.from(
+              (data['suggested_activities'] as List).map((activity) => {
+                'activity': activity['activity'].toString(),
+                'description': activity['description'].toString(),
+              }))
+              : [];
+          // Navigate to Detection page, passing the conversation history
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => Detection(
                 anxiety: data['anxiety'],
                 depression: data['depression'],
+                conversationHistory: _conversationHistory, // Pass conversation history
+                suggestedActivities: suggestedActivities,
               ),
             ),
           );
+          // Navigator.pushNamed(
+          //   context,
+          //   '/detection',
+          //   arguments: {
+          //     'anxiety': data['anxiety'],
+          //     'depression': data['depression'],
+          //     'conversationHistory': _conversationHistory, // Pass conversation history
+          //   },
+          // );
         }
       } else {
         print('Failed to get API response');
@@ -124,15 +139,11 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
   }
 
   void _animateQuestionChange(String newQuestion) async {
-    // Animate the fade-out of the current question
     await _controller.reverse();
-
-    // Update the question and start the fade-in animation
     setState(() {
       _currentQuestion = newQuestion;
     });
-
-    _controller.forward();  // Start the animation again for the new question
+    _controller.forward();
   }
 
   @override
@@ -174,7 +185,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
               FadeTransition(
                 opacity: _questionAnimation,
                 child: Text(
-                  _currentQuestion, // Display current question
+                  _currentQuestion,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontSize: 24,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // To handle JSON
-import 'detection.dart'; // For navigating to the next page
 
 class TherapistPage extends StatefulWidget {
   @override
@@ -11,13 +10,14 @@ class TherapistPage extends StatefulWidget {
 
 class _TherapistPageState extends State<TherapistPage> with SingleTickerProviderStateMixin {
   bool isRecording = false;
+  bool isLoading = false;  // Add this boolean to track the loading state
   late stt.SpeechToText _speech;
   String _recordedText = '';
   late AnimationController _controller;
   late Animation<double> _avatarAnimation;
   late Animation<double> _questionAnimation;
 
-  final String apiUrl = 'https://ab35-47-55-121-22.ngrok-free.app/therapist'; // Update to actual API URL
+  final String apiUrl = 'https://c98e-47-55-121-22.ngrok-free.app/therapist'; // Update to actual API URL
 
   String _currentQuestion = "How are you feeling today?"; // Initial question
   List<Map<String, String>> _conversationHistory = []; // To store questions and answers
@@ -68,6 +68,11 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
 
   void _submitResponse() async {
     if (_recordedText.isNotEmpty) {
+      // Set loading state to true
+      setState(() {
+        isLoading = true;
+      });
+
       // Add the question and answer to the conversation history
       _conversationHistory.add({"question": _currentQuestion, "answer": _recordedText});
 
@@ -83,6 +88,11 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
         headers: {"Content-Type": "application/json"},
         body: json.encode(requestBody),
       );
+
+      // After getting response, set loading state to false
+      setState(() {
+        isLoading = false;
+      });
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -110,27 +120,16 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                 'description': activity['description'].toString(),
               }))
               : [];
-          // Navigate to Detection page, passing the conversation history
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => Detection(
-                anxiety: data['anxiety'],
-                depression: data['depression'],
-                conversationHistory: _conversationHistory, // Pass conversation history
-                suggestedActivities: suggestedActivities,
-              ),
-            ),
+            '/detection',
+            arguments: {
+              'anxiety': data['anxiety'],
+              'depression': data['depression'],
+              'conversationHistory': _conversationHistory, // Pass conversation history
+              'suggestedActivities': suggestedActivities,
+            },
           );
-          // Navigator.pushNamed(
-          //   context,
-          //   '/detection',
-          //   arguments: {
-          //     'anxiety': data['anxiety'],
-          //     'depression': data['depression'],
-          //     'conversationHistory': _conversationHistory, // Pass conversation history
-          //   },
-          // );
         }
       } else {
         print('Failed to get API response');
@@ -197,6 +196,11 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                 ),
               ),
               SizedBox(height: 40),
+
+              // Show a loading spinner when waiting for the API response
+              if (isLoading)
+                CircularProgressIndicator(),  // Show the loading indicator
+
               GestureDetector(
                 onTap: _toggleRecording,
                 child: Column(

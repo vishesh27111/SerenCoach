@@ -56,7 +56,6 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               SizedBox(height: MediaQuery.of(context).padding.top + 20),
-
               Text(
                 'Therapist',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -109,45 +108,56 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
+                SizedBox(height: 10),
+                // Improved List of Suggested Activities
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,  // This ensures the list takes only the required space
+                    shrinkWrap: true, // This ensures the list takes only the required space
                     physics: NeverScrollableScrollPhysics(), // Disables scrolling if not necessary
                     itemCount: widget.suggestedActivities.length,
                     itemBuilder: (context, index) {
                       var activity = widget.suggestedActivities[index];
-                      return ExpansionTile(
-                        title: Text(
-                          activity['activity'] ?? '',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20),
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 5), // Spacing between cards
+                        elevation: 4, // Shadow effect
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              activity['description'] ?? '',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontSize: 16,
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black,
-                              ),
+                        child: ExpansionTile(
+                          title: Text(
+                            activity['activity'] ?? '',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                activity['description'] ?? '',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  fontSize: 16,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
                 ),
-
+                SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Increased vertical padding
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -161,7 +171,7 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
-              ]
+              ],
             ],
           ),
         ),

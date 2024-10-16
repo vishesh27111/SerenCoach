@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/set-goals.dart';
 import '../widgets/MainTile.dart';
 import '../widgets/SmallTile.dart';
 
@@ -39,22 +40,46 @@ class HomePage extends StatelessWidget {
                   mainAxisSpacing: 16.0, // Space between rows
                   crossAxisSpacing: 16.0, // Space between columns
                   childAspectRatio: 1.0, // Ensures the tiles are square
-                  children: const [
+                  children: [
                     SmallTile(
-                      text: 'Start a new session',
+                      text: 'Set Goals',
                       avatarPath: 'assets/images/therapist_avatar.png',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                        );
+                      },
                     ),
                     SmallTile(
-                      text: 'Your recent conversations',
+                      text: 'Set Goals',
                       avatarPath: 'assets/images/therapist_avatar.png',
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                        );
+                      },
                     ),
                     SmallTile(
-                      text: 'View Progress',
+                      text: 'Set Goals',
                       avatarPath: 'assets/images/therapist_avatar.png',
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                        );
+                      },
                     ),
                     SmallTile(
-                      text: 'Settings',
+                      text: 'Set Goals',
                       avatarPath: 'assets/images/therapist_avatar.png',
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                        );
+                      },
                     ),
                   ],
                 ),

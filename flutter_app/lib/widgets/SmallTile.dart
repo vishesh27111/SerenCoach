@@ -4,19 +4,19 @@ import 'package:flutter/material.dart';
 class SmallTile extends StatelessWidget {
   final String text;
   final String avatarPath;
+  final VoidCallback onTap;
 
   const SmallTile({
     Key? key,
     required this.text,
     required this.avatarPath,
+    required this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Define the onTap functionality here
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(

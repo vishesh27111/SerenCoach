@@ -34,7 +34,8 @@ dependencies:
   record: ^4.0.0 # for audio recording
   path_provider: ^2.0.11
   speech_to_text: ^5.6.0
-
+  camera: ^0.10.0
+  intl: ^0.17.0
 
 
   # The following adds the Cupertino Icons font to your application.

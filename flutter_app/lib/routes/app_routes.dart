@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:my_flutter_app/pages/set-goals.dart';
+import 'package:my_flutter_app/pages/track-progress.dart';
 import '../pages/detection.dart';
 import '../pages/home.dart';
 import '../pages/welcome_page.dart';
 import '../pages/therapist_page.dart';
+import '../pages/chats.dart';
 
 class AppRoutes {
   // Change this to a static variable
@@ -19,6 +22,9 @@ class AppRoutes {
         suggestedActivities: args['suggestedActivities'],
       );
     },
-    '/home': (context) => HomePage(),
+    '/home': (context) => const HomePage(),
+    '/chats': (context) => ChatsPage(),
+    '/goals': (context) => const SetGoalsPage(),
+    '/progress': (context) => TrackProgressPage(),
   };
 }

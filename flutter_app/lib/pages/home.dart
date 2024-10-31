@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_flutter_app/pages/chats.dart';
+import 'package:my_flutter_app/pages/track-progress.dart';
 import '../pages/set-goals.dart';
 import '../widgets/MainTile.dart';
 import '../widgets/SmallTile.dart';
@@ -52,22 +54,22 @@ class HomePage extends StatelessWidget {
                       },
                     ),
                     SmallTile(
-                      text: 'Set Goals',
+                      text: 'Your Conversations',
                       avatarPath: 'assets/images/therapist_avatar.png',
                       onTap: () {
                         Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                            MaterialPageRoute(builder: (context) => ChatsPage())
                         );
                       },
                     ),
                     SmallTile(
-                      text: 'Set Goals',
+                      text: 'Track Progress',
                       avatarPath: 'assets/images/therapist_avatar.png',
                       onTap: () {
                         Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                            MaterialPageRoute(builder: (context) => TrackProgressPage())
                         );
                       },
                     ),

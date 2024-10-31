@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import '../globals.dart' as globals;
 
 class Detection extends StatefulWidget {
   final String anxiety;
@@ -37,6 +40,27 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
         _showActivities = true;
       });
     });
+
+  Future<void> _saveConversation() async {
+    final url = Uri.parse('${globals.api_base_url}/save_chat');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({'conversation': widget.conversationHistory});
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        print('Conversation saved successfully');
+      } else {
+        print('Failed to save conversation: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error saving conversation: $e');
+    }
+  }
+
+    // Call the API when the widget is rendered
+    _saveConversation();
   }
 
   @override
@@ -56,6 +80,7 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               SizedBox(height: MediaQuery.of(context).padding.top + 20),
+
               Text(
                 'Therapist',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -108,56 +133,45 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10),
-                // Improved List of Suggested Activities
+
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true, // This ensures the list takes only the required space
+                    shrinkWrap: true,  // This ensures the list takes only the required space
                     physics: NeverScrollableScrollPhysics(), // Disables scrolling if not necessary
                     itemCount: widget.suggestedActivities.length,
                     itemBuilder: (context, index) {
                       var activity = widget.suggestedActivities[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 5), // Spacing between cards
-                        elevation: 4, // Shadow effect
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                      return ExpansionTile(
+                        title: Text(
+                          activity['activity'] ?? '',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20),
                         ),
-                        child: ExpansionTile(
-                          title: Text(
-                            activity['activity'] ?? '',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                activity['description'] ?? '',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontSize: 16,
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              activity['description'] ?? '',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontSize: 16,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       );
                     },
                   ),
                 ),
-                SizedBox(height: 20),
+
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Increased vertical padding
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -171,7 +185,7 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
-              ],
+              ]
             ],
           ),
         ),

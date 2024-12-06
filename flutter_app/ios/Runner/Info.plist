@@ -53,5 +53,27 @@
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>This app requires access to speech recognition to transcribe your speech into text.</string>
 
+    <key>NSCameraUsageDescription</key>
+    <string>This app requires camera access to record videos for therapy sessions.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>This app requires access to the photo library to save recorded videos.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to the photo library to upload images.</string>
+
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+    <key>NSUserTrackingUsageDescription</key>
+    <string>We need your permission to send notifications.</string>
+
 </dict>
 </plist>

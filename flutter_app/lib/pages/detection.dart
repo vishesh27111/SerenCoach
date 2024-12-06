@@ -2,16 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../globals.dart' as globals;
+import '../service/NotificationService.dart';
 
 class Detection extends StatefulWidget {
-  final String anxiety;
-  final String depression;
   final List<Map<String, String>> conversationHistory; // Not displayed
   final List<Map<String, String>> suggestedActivities; // Added for activities
 
   Detection({
-    required this.anxiety,
-    required this.depression,
     required this.conversationHistory,
     required this.suggestedActivities, // Added for activities
   });
@@ -28,11 +25,14 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(duration: const Duration(seconds: 7), vsync: this);
     _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
     _controller.forward();
+    // await ActivityStorage.saveActivities(widget.suggestedActivities);
+
 
     // Delay increased to 10 seconds to give enough time to read predictions
     Future.delayed(const Duration(seconds: 9), () {
@@ -40,6 +40,13 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
         _showActivities = true;
       });
     });
+
+    _initializeAsyncTasks();
+  }
+
+  Future<void> _initializeAsyncTasks() async {
+    await _saveConversation();
+  }
 
   Future<void> _saveConversation() async {
     final url = Uri.parse('${globals.api_base_url}/save_chat');
@@ -49,7 +56,7 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     try {
       final response = await http.post(url, headers: headers, body: body);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         print('Conversation saved successfully');
       } else {
         print('Failed to save conversation: ${response.statusCode}');
@@ -57,10 +64,6 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     } catch (e) {
       print('Error saving conversation: $e');
     }
-  }
-
-    // Call the API when the widget is rendered
-    _saveConversation();
   }
 
   @override
@@ -82,7 +85,7 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
               SizedBox(height: MediaQuery.of(context).padding.top + 20),
 
               Text(
-                'Therapist',
+                'SerenCoach',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                   fontSize: 36,
@@ -114,11 +117,11 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Your anxiety level is ${widget.anxiety}',
+                        'Your anxiety level is ${globals.anxiety}',
                         style: TextStyle(fontSize: 18),
                       ),
                       Text(
-                        'Your depression level is ${widget.depression}',
+                        'Your depression level is ${globals.depression}',
                         style: TextStyle(fontSize: 18),
                       ),
                     ],
@@ -166,7 +169,9 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                 ),
 
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    await NotificationService.scheduleImmediateAndHourlyNotifications(widget.suggestedActivities);
+
                     Navigator.pushReplacementNamed(context, '/home');
                   },
                   style: ElevatedButton.styleFrom(
@@ -193,3 +198,4 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     );
   }
 }
+

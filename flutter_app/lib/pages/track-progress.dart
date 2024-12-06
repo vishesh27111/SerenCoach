@@ -214,43 +214,67 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
           itemCount: goals.length,
           itemBuilder: (context, index) {
             final goal = goals[index];
+            double currentProgress = goal['progress'].toDouble();
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 4,
               margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ListTile(
-                title: Text(
-                  goal['goal_title'],
-                  style: theme.textTheme.bodyLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                subtitle: Text(goal['description']),
-                trailing: showActions
-                    ? PopupMenuButton<String>(
-                  onSelected: (String action) {
-                    if (action == 'update-progress') {
-                      _showProgressSlider(
-                          goal['_id'], goal['progress'].toDouble());
-                    } else if (action == 'update-deadline') {
-                      _showDeadlineDialog(goal['_id']);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'update-progress',
-                      child: Text('Update Progress'),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal['goal_title'],
+                      style: theme.textTheme.bodyLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
-                    const PopupMenuItem(
-                      value: 'update-deadline',
-                      child: Text('Update Deadline'),
+                    const SizedBox(height: 8.0),
+                    Text(goal['description']),
+                    if (showActions) ... [
+                    const SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Progress: ${currentProgress.toStringAsFixed(0)}%'),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary
+                          ),
+                          onPressed: () => _showDeadlineDialog(goal['_id']),
+                          child: Text(
+                            'Update Deadline',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8.0),
+                    Slider(
+                      value: currentProgress,
+                      min: 0.0,
+                      max: 100.0,
+                      divisions: 100,
+                      label: '${currentProgress.toStringAsFixed(0)}%',
+                      onChanged: (value) {
+                        setState(() {
+                          currentProgress = value;
+                        });
+                      },
+                      onChangeEnd: (value) {
+                        _updateGoalProgress(goal['_id'], value);
+                      },
+                    ),
+                    ]
                   ],
-                )
-                    : null,
+                ),
               ),
             );
           },
@@ -258,5 +282,6 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
       ],
     );
   }
+
 
 }

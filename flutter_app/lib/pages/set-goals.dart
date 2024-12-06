@@ -151,14 +151,18 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+                  backgroundColor: theme.colorScheme.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 onPressed: _submitGoal,
-                child: const Text(
+                child: Text(
                   'Set Goal',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white
+                  ),
                 ),
               ),
             ),
@@ -202,9 +206,6 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
                           Text('Progress: ${(goal['progress']).toStringAsFixed(0)}%'),
                         ],
                       ),
-                      // onTap: () {
-                      //   _updateGoal(goal['_id'], goal['progress'] + 0.1);
-                      // },
                     ),
                   );
                 },

@@ -8,6 +8,10 @@ import 'package:camera/camera.dart';
 import '../globals.dart' as globals;
 
 class TherapistPage extends StatefulWidget {
+  final bool allowSkip;
+
+  TherapistPage({this.allowSkip = false});
+
   @override
   _TherapistPageState createState() => _TherapistPageState();
 }
@@ -15,13 +19,14 @@ class TherapistPage extends StatefulWidget {
 class _TherapistPageState extends State<TherapistPage> with SingleTickerProviderStateMixin {
   bool isRecording = false;
   bool isLoading = false;
+  bool isCameraActive = true;
   late stt.SpeechToText _speech;
   String _recordedText = '';
   late AnimationController _controller;
   late Animation<double> _avatarAnimation;
   late Animation<double> _questionAnimation;
 
-  final apiUrl = Uri.parse('${globals.api_base_url}/analyze');
+  final apiUrl = Uri.parse('${globals.api_base_url}/detect');
 
   String _currentQuestion = "How are you feeling today?";
   List<Map<String, String>> _conversationHistory = [];
@@ -61,10 +66,22 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
     setState(() {});
   }
 
+  void _toggleCamera() async {
+    if (isCameraActive) {
+      await _cameraController.dispose();
+      setState(() => isCameraActive = false);
+    } else {
+      _initializeCamera();
+      setState(() => isCameraActive = true);
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
-    _cameraController.dispose();
+    if (isCameraActive) {
+      _cameraController.dispose();
+    }
     super.dispose();
   }
 
@@ -72,7 +89,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
     if (isRecording) {
       _speech.stop();
       _stopVideoRecording();
-    } else {
+    } else if (isCameraActive) {
       _startVideoRecording();
       _speech.initialize().then((available) {
         if (available) {
@@ -85,7 +102,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
   }
 
   void _submitResponse() async {
-    if (_recordedText.isNotEmpty && _videoFilePath != null) {
+    if (_recordedText.isNotEmpty && (_videoFilePath != null || !isCameraActive)) {
       setState(() => isLoading = true);
 
       _conversationHistory.add({"question": _currentQuestion, "answer": _recordedText});
@@ -97,13 +114,15 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
         request.fields['question'] = _currentQuestion;
         request.fields['answer'] = _recordedText;
 
-        // Attach the video file
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'video',
-            _videoFilePath!,
-          ),
-        );
+        // Attach the video file if the camera is active
+        if (isCameraActive && _videoFilePath != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'video',
+              _videoFilePath!,
+            ),
+          );
+        }
 
         var response = await request.send();
         setState(() => isLoading = false);
@@ -115,7 +134,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
           double depressionConfidence = data['depression_confidence'] ?? 0;
 
           String followUpQuestion = data['follow_up'] ?? '';
-          if ((anxietyConfidence < 0.5 || depressionConfidence < 0.5)) {
+          if ((anxietyConfidence < 0.3 || depressionConfidence < 0.3)) {
             setState(() {
               _recordedText = ''; // Clear previous response
             });
@@ -123,6 +142,9 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
             _animateQuestionChange(followUpQuestion);
 
           } else {
+            if (isCameraActive) {
+              _cameraController.dispose(); // Dispose camera before navigating
+            }
             List<Map<String, String>> suggestedActivities = [];
 
             if (data['suggested_activities'] != null) {
@@ -133,9 +155,13 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
               })
                   .toList();
             }
+
+            globals.anxiety = data['anxiety'];
+            globals.depression = data['depression'];
+
             Navigator.pushNamed(context, '/detection', arguments: {
-              'anxiety': data['anxiety'],
-              'depression': data['depression'],
+              // 'anxiety': data['anxiety'],
+              // 'depression': data['depression'],
               'conversationHistory': _conversationHistory,
               'suggestedActivities': suggestedActivities ?? [],
             });
@@ -150,7 +176,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
   }
 
   void _startVideoRecording() async {
-    if (!_cameraController.value.isRecordingVideo) {
+    if (isCameraActive && !_cameraController.value.isRecordingVideo) {
       try {
         await _initializeCameraFuture;
         final directory = await getTemporaryDirectory();
@@ -170,9 +196,8 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
     }
   }
 
-
   void _stopVideoRecording() async {
-    if (_cameraController.value.isRecordingVideo) {
+    if (isCameraActive && _cameraController.value.isRecordingVideo) {
       try {
         XFile recordedVideo = await _cameraController.stopVideoRecording();
         setState(() {
@@ -212,7 +237,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                     child: Column(
                       children: [
                         Text(
-                          'Therapist',
+                          'SerenCoach',
                           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                             fontSize: 36,
@@ -247,7 +272,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                   SizedBox(height: 40),
                   if (isLoading) CircularProgressIndicator(),
                   GestureDetector(
-                    onTap: _toggleRecording,
+                    onTap: isLoading ? null : _toggleRecording, // Disable during loading
                     child: Column(
                       children: [
                         Icon(
@@ -266,29 +291,93 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                       ],
                     ),
                   ),
+                  // if (!isCameraActive)
+                  //   ElevatedButton(
+                  //     onPressed: _toggleCamera,
+                  //     child: Text("Turn Camera On"),
+                  //   ),
                 ],
               ),
             ),
           ),
-          // Camera Preview at the Top Right Corner
-          Positioned(
-            top: 40,
-            right: 20,
-            child: FutureBuilder<void>(
-              future: _initializeCameraFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return SizedBox(
-                    width: 120,
-                    height: 160,
-                    child: CameraPreview(_cameraController),
-                  );
-                } else {
-                  return CircularProgressIndicator();
-                }
-              },
+          if (isCameraActive)
+            Positioned(
+              top: 40,
+              right: 20,
+              child: FutureBuilder<void>(
+                future: _initializeCameraFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return Stack(
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          height: 160,
+                          child: CameraPreview(_cameraController),
+                        ),
+                        Positioned(
+                          top: 5,
+                          right: 5,
+                          child: GestureDetector(
+                            onTap: _toggleCamera,
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.red,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
             ),
-          ),
+          if (!isCameraActive)
+            Positioned(
+              top: 80,
+              right: 40,
+              child: GestureDetector(
+                onTap: _toggleCamera,
+                child: Icon(
+                  Icons.camera_alt,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 36,
+                ),
+              ),
+            ),
+
+          // Add Skip Button
+          if (widget.allowSkip)
+            Positioned(
+              bottom: 60,
+              right: 20,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (isCameraActive) {
+                    _cameraController.dispose(); // Dispose camera before navigating
+                  }
+                  Navigator.pushReplacementNamed(context, '/home');
+                },
+                child: Text(
+                  'Skip',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Optional: Adjust button size
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Optional: Add rounded corners
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

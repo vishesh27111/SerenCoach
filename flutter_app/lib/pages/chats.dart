@@ -31,12 +31,12 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   String formatDate(String timestamp) {
-    final DateTime dt = DateFormat("yyyy-MM-dd,HH:mm:ss").parse(timestamp);
+    final DateTime dt = DateTime.parse(timestamp);
     return DateFormat("dd/MM/yy").format(dt);
   }
 
   String formatTime(String timestamp) {
-    final DateTime dt = DateFormat("yyyy-MM-dd,HH:mm:ss").parse(timestamp);
+    final DateTime dt = DateTime.parse(timestamp);
     return DateFormat("HH:mm").format(dt);
   }
 
@@ -44,7 +44,7 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text('Previous Chats'),
+          title: const Text('Previous Chats with SerenCoach'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
@@ -60,7 +60,7 @@ class _ChatsPageState extends State<ChatsPage> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No previous chats found.'));
+            return Center(child: Text('No previous chats.'));
           } else {
             final chats = snapshot.data!;
             return ListView.builder(

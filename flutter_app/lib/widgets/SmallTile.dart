@@ -5,12 +5,14 @@ class SmallTile extends StatelessWidget {
   final String text;
   final String avatarPath;
   final VoidCallback onTap;
+  final Color? color;
 
   const SmallTile({
     Key? key,
     required this.text,
     required this.avatarPath,
     required this.onTap,
+    this.color, // Required gradient colors
   }) : super(key: key);
 
   @override
@@ -19,11 +21,12 @@ class SmallTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF4A90E2),
-              Color(0xFFB0C4DE),
-            ],
+          gradient: LinearGradient(
+            colors: color != null
+                ? [color!, Color(0xFFB0C4DE)
+              // color!.withOpacity(0.3)
+            ] // Use provided color with a gradient effect
+                : [Color(0xFF4A90E2), Color(0xFFB0C4DE)], // Default gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -42,7 +45,8 @@ class SmallTile extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundImage: AssetImage(avatarPath),
-              radius: 30.0, // Smaller avatar for small tiles
+              backgroundColor: Colors.white,
+              radius: 40.0, // Smaller avatar for small tiles
             ),
             const SizedBox(height: 10.0),
             Text(

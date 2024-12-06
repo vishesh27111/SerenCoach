@@ -10,7 +10,11 @@ class MainTile extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(context, '/therapist');
+          Navigator.pushNamed(
+            context,
+            '/therapist',
+            arguments: {'canSkip': true},
+          );
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

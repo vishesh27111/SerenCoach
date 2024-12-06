@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:my_flutter_app/pages/ai-chat.dart';
 import 'package:my_flutter_app/pages/chats.dart';
+import 'package:my_flutter_app/pages/combat.dart';
+import 'package:my_flutter_app/pages/emergency.dart';
+import 'package:my_flutter_app/pages/gratitude-journaling.dart';
+import 'package:my_flutter_app/pages/guided-meditation.dart';
 import 'package:my_flutter_app/pages/track-progress.dart';
 import '../pages/set-goals.dart';
 import '../widgets/MainTile.dart';
 import '../widgets/SmallTile.dart';
+import '../globals.dart' as globals; // Import globals
 
 class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+  HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+
+    var anxiety = globals.anxiety ?? "low"; // Default to "low" if null
+    var depression = globals.depression ?? "low"; // Default to "low" if null
+
+    int level = getLevel(anxiety, depression);
+    List<SmallTile> tiles = getTilesForLevel(level, context);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -42,48 +55,97 @@ class HomePage extends StatelessWidget {
                   mainAxisSpacing: 16.0, // Space between rows
                   crossAxisSpacing: 16.0, // Space between columns
                   childAspectRatio: 1.0, // Ensures the tiles are square
-                  children: [
-                    SmallTile(
-                      text: 'Set Goals',
-                      avatarPath: 'assets/images/therapist_avatar.png',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SetGoalsPage())
-                        );
-                      },
-                    ),
-                    SmallTile(
-                      text: 'Your Conversations',
-                      avatarPath: 'assets/images/therapist_avatar.png',
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ChatsPage())
-                        );
-                      },
-                    ),
-                    SmallTile(
-                      text: 'Track Progress',
-                      avatarPath: 'assets/images/therapist_avatar.png',
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => TrackProgressPage())
-                        );
-                      },
-                    ),
-                    SmallTile(
-                      text: 'Set Goals',
-                      avatarPath: 'assets/images/therapist_avatar.png',
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const SetGoalsPage())
-                        );
-                      },
-                    ),
-                  ],
+                  children: tiles,
+                  // children: [
+                  //   SmallTile(
+                  //     text: 'Set Goals',
+                  //     avatarPath: 'assets/images/goal.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(builder: (context) => const SetGoalsPage())
+                  //       );
+                  //     },
+                  //     color: Colors.red[800]
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Your Conversations',
+                  //     avatarPath: 'assets/images/chats.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => ChatsPage())
+                  //       );
+                  //     },
+                  //     color: Colors.blue[900]
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Track Progress',
+                  //     avatarPath: 'assets/images/progress.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => TrackProgressPage())
+                  //       );
+                  //     },
+                  //     color: Colors.green[700],
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Gratitude Journaling',
+                  //     avatarPath: 'assets/images/journal.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => GratitudeJournalPage())
+                  //       );
+                  //     },
+                  //     color: Colors.pink[900]
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Guided Meditation',
+                  //     avatarPath: 'assets/images/guided.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => GuidedMeditationsPage())
+                  //       );
+                  //     },
+                  //     color: Colors.deepPurple,
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Combat anxiety and depression',
+                  //     avatarPath: 'assets/images/combat.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => ArticlePage())
+                  //       );
+                  //     },
+                  //     color: Colors.deepOrange[200],
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Chat with AI Therapist',
+                  //     avatarPath: 'assets/images/ai.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => ChatWithTherapistPage())
+                  //       );
+                  //     },
+                  //     color: Colors.orange,
+                  //   ),
+                  //   SmallTile(
+                  //     text: 'Seek urgent help',
+                  //     avatarPath: 'assets/images/emergency.png',
+                  //     onTap: () {
+                  //       Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => EmergencyPage())
+                  //       );
+                  //     },
+                  //     color: Colors.red[900],
+                  //   ),
+                  // ],
                 ),
               ),
             ],
@@ -91,5 +153,152 @@ class HomePage extends StatelessWidget {
         ),
       ),
     );
+  }
+  // Return the tiles to display based on level
+  List<SmallTile> getTilesForLevel(int level, BuildContext context) {
+
+    List<SmallTile> alwaysDisplayedTiles = [
+      SmallTile(
+          text: 'Set Goals',
+          avatarPath: 'assets/images/goal.png',
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SetGoalsPage())
+            );
+          },
+          color: Colors.red[800]
+      ),
+      SmallTile(
+          text: 'Your Conversations',
+          avatarPath: 'assets/images/chats.png',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ChatsPage())
+            );
+          },
+          color: Colors.blue[900]
+      ),
+      SmallTile(
+          text: 'Track Progress',
+          avatarPath: 'assets/images/progress.png',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TrackProgressPage())
+          );
+        },
+        color: Colors.green[700],
+      )
+    ];
+
+    if (level == 0) {
+      return [...alwaysDisplayedTiles, ...
+        [
+          SmallTile(
+            text: 'Gratitude Journaling',
+            avatarPath: 'assets/images/journal.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GratitudeJournalPage()),
+              );
+            },
+            color: Colors.pink[900],
+          ),
+          SmallTile(
+            text: 'Guided Meditation',
+            avatarPath: 'assets/images/guided.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GuidedMeditationsPage()),
+              );
+            },
+            color: Colors.deepPurple,
+          ),
+          SmallTile(
+            text: 'Combat anxiety and depression',
+            avatarPath: 'assets/images/combat.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ArticlePage()),
+              );
+            },
+            color: Colors.deepOrange[200],
+          ),
+        ]
+      ];
+    } else if (level == 1) {
+      return [...alwaysDisplayedTiles, ...
+        [
+          SmallTile(
+            text: 'Guided Meditation',
+            avatarPath: 'assets/images/guided.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GuidedMeditationsPage()),
+              );
+            },
+            color: Colors.deepPurple,
+          ),
+          SmallTile(
+          text: 'Chat with AI Therapist',
+          avatarPath: 'assets/images/ai.png',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ChatWithTherapistPage()),
+            );
+          },
+          color: Colors.orange,
+        ),
+        ]
+      ];
+    } else if (level == 2) {
+      return [ ...alwaysDisplayedTiles, ...
+        [
+          SmallTile(
+            text: 'Chat with AI Therapist',
+            avatarPath: 'assets/images/ai.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ChatWithTherapistPage()),
+              );
+            },
+            color: Colors.orange,
+          ),
+          SmallTile(
+            text: 'Seek urgent help',
+            avatarPath: 'assets/images/emergency.png',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EmergencyPage()),
+              );
+            },
+            color: Colors.red[900],
+          ),
+        ]
+      ];
+    }
+
+    return alwaysDisplayedTiles;
+  }
+
+  int getLevel(String anxiety, String depression){
+    if (anxiety=="low" && depression=="low"){
+      return 0;
+    }
+    else if(anxiety=="high" || depression=="high"){
+      return 2;
+    }
+    else{
+      return 1;
+    }
   }
 }

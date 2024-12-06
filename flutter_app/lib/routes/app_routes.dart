@@ -11,18 +11,25 @@ class AppRoutes {
   // Change this to a static variable
   static final Map<String, WidgetBuilder> routes = {
     '/': (context) => WelcomePage(),
-    '/therapist': (context) => TherapistPage(),
+    '/therapist': (context) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+      return TherapistPage(
+        allowSkip: args?['canSkip'] ?? false, // Default to false if no argument is passed
+      );
+    },
+
     // Uncomment and fix this route when necessary:
     '/detection': (context) {
       final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
       return Detection(
-        anxiety: args['anxiety'],
-        depression: args['depression'],
+        // anxiety: args['anxiety'],
+        // depression: args['depression'],
         conversationHistory: args['conversationHistory'],
         suggestedActivities: args['suggestedActivities'],
       );
     },
-    '/home': (context) => const HomePage(),
+    '/home': (context) => HomePage(),
     '/chats': (context) => ChatsPage(),
     '/goals': (context) => const SetGoalsPage(),
     '/progress': (context) => TrackProgressPage(),

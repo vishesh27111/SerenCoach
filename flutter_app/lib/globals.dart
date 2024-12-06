@@ -1,3 +1,9 @@
 library my_prj.globals;
 
-String api_base_url = "https://36bd-47-55-121-22.ngrok-free.app";
+import './keys.dart';
+
+String? anxiety = 'low';
+String? depression = 'low';
+
+String api_base_url = "https://143d-47-55-121-22.ngrok-free.app";
+String news_api_key = Keys.NewsAPIKey;

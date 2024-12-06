@@ -7,23 +7,18 @@ class WelcomePage extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(25.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              // Circle image container
-              CircleAvatar(
-                radius: 75,
-                backgroundColor: Colors.transparent,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/welcome_image.png',
-                    fit: BoxFit.cover,
-                  ),
-                ),
+              Image.asset(
+              'assets/images/welcome_image.png',
+                width: 170,
+                height: 170,
+                fit: BoxFit.cover,
               ),
-              SizedBox(height: 30),
+              SizedBox(height: 40),
               Text(
                 'SerenCoach',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(

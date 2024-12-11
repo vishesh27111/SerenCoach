@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
-import '../globals.dart' as globals;
 import 'package:share_plus/share_plus.dart';
+import '../globals.dart' as globals; // Import globals
 
 class GratitudeJournalPage extends StatefulWidget {
   @override
@@ -13,10 +13,9 @@ class GratitudeJournalPage extends StatefulWidget {
 class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
   DateTime selectedDate = DateTime.now();
   int startOffset = 0;
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  Map<String, dynamic>? todayLog;
-  final int visibleDays = 6;
+  List<Map<String, dynamic>> todayLogs = [];  // Now it's a list of logs
+  final int visibleDays = 5;
+  String? selectedTopic;
 
   @override
   void initState() {
@@ -59,24 +58,51 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text("Gratitude Journal"),
+          centerTitle: true,
         ),
-        resizeToAvoidBottomInset: true, // This makes the Scaffold adjust when the keyboard is open
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom, // Adds padding to prevent overflow
+        body: Column(
+          children: [
+            _buildDateSelector(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    if (isCurrentDate && selectedTopic == null)
+                      _buildTopicSelection(),
+                    if (isCurrentDate && selectedTopic != null)
+                      DescriptionPage(
+                        topic: selectedTopic!,
+                        onSubmit: (description) {
+                          _saveEntry(description);
+                        },
+                        onClose: () {
+                          setState(() {
+                            selectedTopic = null;
+                          });
+                        },
+                      ),
+                    // Title for the list of logs
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        "Gratitude Logs",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    // Display all logs for today
+                    if (todayLogs.isNotEmpty)
+                      ...todayLogs.map((log) => _buildLogDisplay(log)).toList(),
+                    if (todayLogs.isEmpty)
+                      Center(child: Text("No logs made for this date")),
+                  ],
+                ),
+              ),
             ),
-            child: Column(
-              children: [
-                _buildDateSelector(),
-                if (isCurrentDate) _buildNewEntryForm(),
-                if (todayLog != null)
-                  _buildLogDisplay(todayLog!),
-                if (!isCurrentDate && todayLog == null)
-                  Center(child: Text("No logs made")),
-              ],
-            )
-          ),
+          ],
         ),
       ),
     );
@@ -109,10 +135,11 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
                     _getEntryForDate();
                   },
                   child: Container(
-                    width: 42,
+                    width: 50,
                     alignment: Alignment.center,
                     margin: EdgeInsets.symmetric(horizontal: 6.5),
                     decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).scaffoldBackgroundColor,
@@ -148,29 +175,63 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
     );
   }
 
-  Widget _buildNewEntryForm() {
+  Widget _buildTopicSelection() {
+    List<String> topics = ["Family", "Health", "Work", "Friends", "Nature", "Festival", "Food"];
     return Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          TextField(
-            controller: titleController,
-            decoration: InputDecoration(labelText: "Title"),
-          ),
-          SizedBox(height: 8),
-          TextField(
-            controller: descriptionController,
-            maxLines: 4,
-            decoration: InputDecoration(labelText: "Description"),
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
+          Text(
+            "What are you grateful for today?",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.headlineLarge?.color,
             ),
-            onPressed: _saveEntry,
-            child: Text("Save Entry"),
+          ),
+          SizedBox(height: 10),
+          // List of topics with a stylish design
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+              childAspectRatio: 2.5,
+            ),
+            itemCount: topics.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedTopic = topics[index];
+                  });
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.symmetric(vertical: 12.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    topics[index],
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -180,7 +241,7 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
   Widget _buildLogDisplay(Map<String, dynamic> log) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      elevation: 4,
+      elevation: 5,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -190,14 +251,14 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              log['title'] ?? 'No Title',
+              log['topic'] ?? 'No Topic',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 10),
             Text(
               log['description'] ?? 'No Description',
               style: TextStyle(
@@ -220,77 +281,121 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
   }
 
   Future<void> _getEntryForDate() async {
-    final apiUrl =
-        '${globals.api_base_url}/logs/${selectedDate.toString().split(' ')[0]}';
+    final String formattedDate = selectedDate.toIso8601String().split("T")[0];  // This will give you YYYY-MM-DD format
+    final apiUrl = Uri.parse('${globals.api_base_url}/logs/$formattedDate');
 
     try {
-      final response = await http.get(Uri.parse(apiUrl));
+      final response = await http.get(apiUrl);
+      print("API Response: ${response.body}");
 
       if (response.statusCode == 200) {
-        final entryData = jsonDecode(response.body);
+        final entryData = jsonDecode(response.body) as List<dynamic>;
         setState(() {
-          todayLog = entryData;
+          todayLogs = entryData.map((log) => log as Map<String, dynamic>).toList();
+        });
+      } else if (response.statusCode == 404) {
+        setState(() {
+          todayLogs = [];  // No logs found for the date
         });
       } else {
-        setState(() {
-          todayLog = null;
-        });
+        print("Failed with status: ${response.statusCode}, body: ${response.body}");
       }
     } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("An error occurred: $e")),
-      );
+      print("Error occurred: $e");
+      Fluttertoast.showToast(msg: "Error fetching entries: $e");
     }
   }
 
-  Future<void> _saveEntry() async {
-    final apiUrl = '${globals.api_base_url}/add_log';
-    FocusScope.of(context).unfocus();
+  Future<void> _saveEntry(String description) async {
+    final apiUrl = Uri.parse('${globals.api_base_url}/log');
+    final String formattedDate = selectedDate.toIso8601String().split("T")[0];
 
     final entryData = {
-      'date': DateTime.now().toString().split(' ')[0],
-      'title': titleController.text,
-      'description': descriptionController.text,
+      'date': formattedDate,
+      'topic': selectedTopic,
+      'description': description,
     };
 
     try {
       final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+        apiUrl,
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(entryData),
       );
 
-      if (response.statusCode == 201) {
-        Fluttertoast.showToast(msg: "Log saved");
+      if (response.statusCode == 200) {
+        Fluttertoast.showToast(msg: "Log saved successfully");
         setState(() {
-          todayLog = entryData;
-          titleController.clear();
-          descriptionController.clear();
+          todayLogs.add(entryData); // Add the new entry to the logs
+          selectedTopic = null;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to add entry: ${response.reasonPhrase}")),
-        );
+        Fluttertoast.showToast(msg: "Failed to save entry");
+        print("Failed to save entry: ${response.body}");
       }
     } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("An error occurred: $e")),
-      );
+      Fluttertoast.showToast(msg: "Error saving entry: $e");
+      print("Error occurred: $e");
     }
   }
 
   void _shareEntry(Map<String, dynamic> log) {
-    final String title = log['title'] ?? 'No Title';
+    final String topic = log['topic'] ?? 'No Topic';
     final String description = log['description'] ?? 'No Description';
-    final String date = selectedDate.toString().split(' ')[0];
+    // final String date = selectedDate.toString().split(' ')[0];
 
-    final String shareContent = "Gratitude Journal Entry for $date\n\n"
-        "Title: $title\n\n"
+    final String shareContent = "Today's Gratitude Journal Entry"
+        "Topic: $topic\n\n"
         "Description:\n$description";
 
     Share.share(shareContent);
   }
+}
 
+class DescriptionPage extends StatelessWidget {
+  final String topic;
+  final Function(String) onSubmit;
+  final VoidCallback onClose;
+
+  DescriptionPage({required this.topic, required this.onSubmit, required this.onClose});
+
+  final TextEditingController descriptionController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.close),
+            onPressed: onClose,
+          ),
+          title: Text("Describe"),
+        ),
+        Padding(
+          padding: EdgeInsets.all(16.0),
+          child: TextField(
+            controller: descriptionController,
+            maxLines: 6,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Why are you grateful?",
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            onSubmit(descriptionController.text);
+          },
+          child: Text("Submit",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

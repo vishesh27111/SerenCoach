@@ -17,6 +17,7 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
   final _deadlineController = TextEditingController();
   DateTime? _selectedDeadline; // To store the selected date
 
+  String _goalType = "Meditation"; // Default goal type
   List<dynamic> _goals = [];
   bool _isLoading = true;
 
@@ -83,6 +84,7 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
 
     final url = Uri.parse('${globals.api_base_url}/set_goal');
     final goalData = {
+      "goal_type": _goalType, // Add the selected goal type
       "goal_title": goalTitle,
       "description": description,
       "deadline": deadline,
@@ -115,6 +117,7 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
     _descriptionController.clear();
     _deadlineController.clear();
     _selectedDeadline = null;
+    _goalType = "Meditation"; // Reset goal type to default
   }
 
   void _showSnackBar(String message) {
@@ -126,58 +129,98 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Set Goals'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          },
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap outside
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Set Goals'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            },
+          ),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTextField('Goal', _goalTitleController, 'Enter your goal ...', textTheme, theme),
-            const SizedBox(height: 16.0),
-            _buildTextField('Goal Description', _descriptionController, 'Describe your goal...', textTheme, theme, maxLines: 3),
-            const SizedBox(height: 16.0),
-            _buildDeadlineField(context, textTheme, theme),
-            const SizedBox(height: 12.0),
-            Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
-                  backgroundColor: theme.colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Goal Type',
+                style: textTheme.bodyLarge!.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
-                onPressed: _submitGoal,
-                child: Text(
-                  'Set Goal',
-                  style: TextStyle(
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Meditation'),
+                      value: 'Meditation',
+                      groupValue: _goalType,
+                      onChanged: (value) {
+                        setState(() {
+                          _goalType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Custom'),
+                      value: 'Custom',
+                      groupValue: _goalType,
+                      onChanged: (value) {
+                        setState(() {
+                          _goalType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              _buildTextField('Goal', _goalTitleController, 'Enter your goal ...', textTheme, theme),
+              const SizedBox(height: 16.0),
+              _buildTextField('Goal Description', _descriptionController, 'Describe your goal...', textTheme, theme, maxLines: 3),
+              const SizedBox(height: 16.0),
+              _buildDeadlineField(context, textTheme, theme),
+              const SizedBox(height: 12.0),
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+                    backgroundColor: theme.colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: _submitGoal,
+                  child: Text(
+                    'Set Goal',
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24.0),
-            Text(
-              'Your Active Goals',
-              style: textTheme.headlineLarge!.copyWith(fontSize: 18),
-            ),
-            const SizedBox(height: 8.0),
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _goals.isEmpty
-                ? const Text('No goals set yet.')
-                : Expanded(
-              child: ListView.builder(
+              const SizedBox(height: 24.0),
+              Text(
+                'Your Active Goals',
+                style: textTheme.headlineLarge!.copyWith(fontSize: 18),
+              ),
+              const SizedBox(height: 8.0),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _goals.isEmpty
+                  ? const Text('No goals set yet.')
+                  : ListView.builder(
+                shrinkWrap: true, // Required to avoid overflow
+                physics: const NeverScrollableScrollPhysics(), // Disable internal scrolling
                 itemCount: _goals.length,
                 itemBuilder: (context, index) {
                   final goal = _goals[index];
@@ -210,8 +253,8 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
                   );
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

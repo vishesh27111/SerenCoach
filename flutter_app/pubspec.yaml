@@ -44,7 +44,10 @@ dependencies:
   shared_preferences: ^2.0.11
   flutter_local_notifications: ^15.0.0
   timezone: ^0.9.0
-  audioplayers: ^6.1.0
+  #  flutter_sound: ^9.17.8
+  #  flutter_sound_platform_interface: ^9.2.13
+  #  webview_flutter: ^4.2.1
+  just_audio: ^0.9.13
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -81,6 +84,8 @@ flutter:
     - assets/images/combat.png
     - assets/images/ai.png
     - assets/images/emergency.png
+    - assets/audios/
+    - assets/audios/audios.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

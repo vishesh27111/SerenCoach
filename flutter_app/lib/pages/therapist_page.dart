@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -87,10 +86,17 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
 
   void _toggleRecording() {
     if (isRecording) {
+      // Stop speech recognition and optionally video recording
       _speech.stop();
-      _stopVideoRecording();
-    } else if (isCameraActive) {
-      _startVideoRecording();
+      if (isCameraActive) {
+        _stopVideoRecording();
+      } else {
+        // Submit the response if camera is not active
+        _submitResponse();
+      }
+      setState(() => isRecording = false);
+    } else {
+      // Start speech recognition
       _speech.initialize().then((available) {
         if (available) {
           _speech.listen(onResult: (result) {
@@ -98,6 +104,12 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
           });
         }
       });
+
+      // Start video recording only if the camera is active
+      if (isCameraActive) {
+        _startVideoRecording();
+      }
+      setState(() => isRecording = true);
     }
   }
 

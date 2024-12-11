@@ -75,5 +75,14 @@
     <key>NSUserTrackingUsageDescription</key>
     <string>We need your permission to send notifications.</string>
 
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+
+    <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <true/>
+
 </dict>
 </plist>

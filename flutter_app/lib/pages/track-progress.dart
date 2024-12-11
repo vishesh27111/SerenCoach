@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart';
 import '../globals.dart' as globals;
 
 class TrackProgressPage extends StatefulWidget {
@@ -12,10 +11,10 @@ class TrackProgressPage extends StatefulWidget {
 }
 
 class _TrackProgressPageState extends State<TrackProgressPage> {
-  List<dynamic> _inProgressGoals = [];
+  List<dynamic> _customGoals = [];
+  List<dynamic> _meditationGoals = [];
   List<dynamic> _completedGoals = [];
   bool _isLoading = true;
-  bool _isAccordionExpanded = false;
 
   @override
   void initState() {
@@ -29,7 +28,12 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          _inProgressGoals = data.where((goal) => goal['status'] == 'in-progress').toList();
+          _customGoals = data
+              .where((goal) => goal['status'] == 'in-progress' && goal['goal_type'] == 'Custom')
+              .toList();
+          _meditationGoals = data
+              .where((goal) => goal['status'] == 'in-progress' && goal['goal_type'] == 'Meditation')
+              .toList();
           _completedGoals = data.where((goal) => goal['status'] == 'completed').toList();
           _isLoading = false;
         });
@@ -41,116 +45,6 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
         _isLoading = false;
       });
       print('Error fetching goals: $error');
-    }
-  }
-
-  Future<void> _updateGoalProgress(String goalId, double newProgress) async {
-    String url = '${globals.api_base_url}/update_goal/$goalId';
-    Map<String, dynamic> updates = {'progress': newProgress};
-
-    if (newProgress == 100.0) {
-      updates['status'] = 'completed'; // Mark as completed
-    }
-
-    try {
-      final response = await http.patch(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(updates),
-      );
-
-      if (response.statusCode == 200) {
-        _fetchGoals(); // Refresh goals after update
-      } else {
-        throw Exception('Failed to update goal');
-      }
-    } catch (error) {
-      print('Error updating goal: $error');
-    }
-  }
-
-  Future<void> _updateGoalDeadline(String goalId, DateTime newDeadline) async {
-    String url = '${globals.api_base_url}/update_goal/$goalId';
-    Map<String, dynamic> updates = {'deadline': newDeadline.toIso8601String()};
-
-    try {
-      final response = await http.patch(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(updates),
-      );
-
-      if (response.statusCode == 200) {
-        _fetchGoals(); // Refresh goals after deadline update
-      } else {
-        throw Exception('Failed to update deadline');
-      }
-    } catch (error) {
-      print('Error updating deadline: $error');
-    }
-  }
-
-
-  void _showProgressSlider(String goalId, double currentProgress) {
-    double newProgress = currentProgress;
-
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Update Progress'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Progress: ${newProgress.toStringAsFixed(0)}%'),
-                  Slider(
-                    value: newProgress,
-                    min: 0.0,
-                    max: 100.0,
-                    divisions: 100,
-                    label: '${newProgress.toStringAsFixed(0)}%',
-                    onChanged: (value) {
-                      setState(() {
-                        newProgress = value;
-                      });
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Submit'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _updateGoalProgress(goalId, newProgress);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showDeadlineDialog(String goalId) async {
-    DateTime? newDeadline = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-
-    if (newDeadline != null) {
-      _updateGoalDeadline(goalId, newDeadline);
     }
   }
 
@@ -171,25 +65,20 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  // children: [
-                  //   _buildSectionTitle('In-Progress Goals', Colors.orange),
-                  //   const SizedBox(height: 8.0),
-                  //   _buildGoalsList(_inProgressGoals, true),
-                  //   const SizedBox(height: 24.0),
-                  //   _buildAccordion('Completed Goals', Colors.green),
-                  // ],
-                  children: [
-                    _buildGoalSection('In-Progress Goals', _inProgressGoals, Colors.orange),
-                    const SizedBox(height: 16.0),
-                    _buildGoalSection('Completed Goals', _completedGoals, Colors.green, showActions: false),
-                  ],
-                ),
-              ),
-            ),
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildGoalSection('Custom Goals', _customGoals, Colors.orange),
+              const SizedBox(height: 16.0),
+              _buildMeditationGoalsSection('Meditation Goals', _meditationGoals),
+              const SizedBox(height: 16.0),
+              _buildGoalSection('Completed Goals', _completedGoals, Colors.green, showActions: false),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -207,7 +96,7 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
         ),
         const SizedBox(height: 8.0),
         goals.isEmpty
-            ? const Text('No goals available.')
+            ? const Text('No goals set.')
             : ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -235,43 +124,24 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
                     ),
                     const SizedBox(height: 8.0),
                     Text(goal['description']),
-                    if (showActions) ... [
-                    const SizedBox(height: 16.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Progress: ${currentProgress.toStringAsFixed(0)}%'),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary
-                          ),
-                          onPressed: () => _showDeadlineDialog(goal['_id']),
-                          child: Text(
-                            'Update Deadline',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8.0),
-                    Slider(
-                      value: currentProgress,
-                      min: 0.0,
-                      max: 100.0,
-                      divisions: 100,
-                      label: '${currentProgress.toStringAsFixed(0)}%',
-                      onChanged: (value) {
-                        setState(() {
-                          currentProgress = value;
-                        });
-                      },
-                      onChangeEnd: (value) {
-                        _updateGoalProgress(goal['_id'], value);
-                      },
-                    ),
+                    if (showActions) ...[
+                      const SizedBox(height: 16.0),
+                      Text('Progress: ${currentProgress.toStringAsFixed(0)}%'),
+                      Slider(
+                        value: currentProgress,
+                        min: 0.0,
+                        max: 100.0,
+                        divisions: 100,
+                        label: '${currentProgress.toStringAsFixed(0)}%',
+                        onChanged: (value) {
+                          setState(() {
+                            currentProgress = value;
+                          });
+                        },
+                        onChangeEnd: (value) {
+                          _updateGoalProgress(goal['_id'], value);
+                        },
+                      ),
                     ]
                   ],
                 ),
@@ -283,5 +153,104 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
     );
   }
 
+  Widget _buildMeditationGoalsSection(String title, List<dynamic> goals) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleLarge!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        goals.isEmpty
+            ? const Text('No active meditation goals.')
+            : ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: goals.length,
+          itemBuilder: (context, index) {
+            final goal = goals[index];
+            double currentProgress = goal['progress'].toDouble();
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal['goal_title'],
+                      style: theme.textTheme.bodyLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(goal['description']),
+                    const SizedBox(height: 16.0),
+                    Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: currentProgress / 100,
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text('Progress: ${currentProgress.toStringAsFixed(0)}%'),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
+  Future<void> _updateGoalProgress(String goalId, double newProgress) async {
+    String url = '${globals.api_base_url}/update_goal/$goalId';
+    Map<String, dynamic> updates = {'progress': newProgress};
+
+    if (newProgress == 100.0) {
+      updates['status'] = 'completed'; // Mark as completed
+    }
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updates),
+      );
+
+      if (response.statusCode == 200) {
+        _fetchGoals(); // Refresh goals after update
+      } else {
+        throw Exception('Failed to update goal');
+      }
+    } catch (error) {
+      print('Error updating goal: $error');
+    }
+  }
 }

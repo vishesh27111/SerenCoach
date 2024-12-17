@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:camera/camera.dart';
 import '../globals.dart' as globals;
+import 'package:permission_handler/permission_handler.dart';
 
 class TherapistPage extends StatefulWidget {
   final bool allowSkip;
@@ -48,6 +49,27 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
     _speech = stt.SpeechToText();
 
     _initializeCamera();
+
+    checkResources().then((resourcesAvailable) {
+      if (resourcesAvailable) {
+        _initializeCamera();
+        // _initializeSpeech();
+      } else {
+        print("Resources unavailable");
+      }
+    });
+  }
+
+
+  Future<bool> checkResources() async {
+    final micPermission = await Permission.microphone.isGranted;
+    final cameraPermission = await Permission.camera.isGranted;
+
+    if (!micPermission || !cameraPermission) {
+      await [Permission.microphone, Permission.camera].request();
+    }
+
+    return micPermission && cameraPermission;
   }
 
   void _initializeCamera() async {
@@ -146,7 +168,7 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
           double depressionConfidence = data['depression_confidence'] ?? 0;
 
           String followUpQuestion = data['follow_up'] ?? '';
-          if ((anxietyConfidence < 0.3 || depressionConfidence < 0.3)) {
+          if ((anxietyConfidence < 0.4 || depressionConfidence < 0.4)) {
             setState(() {
               _recordedText = ''; // Clear previous response
             });
@@ -172,8 +194,6 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
             globals.depression = data['depression'];
 
             Navigator.pushNamed(context, '/detection', arguments: {
-              // 'anxiety': data['anxiety'],
-              // 'depression': data['depression'],
               'conversationHistory': _conversationHistory,
               'suggestedActivities': suggestedActivities ?? [],
             });
@@ -191,17 +211,20 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
     if (isCameraActive && !_cameraController.value.isRecordingVideo) {
       try {
         await _initializeCameraFuture;
-        final directory = await getTemporaryDirectory();
-        final filePath = '${directory.path}/user_response_video.mp4';
+        // Ensure camera is initialized before proceeding
+        if (_cameraController.value.isInitialized) {
+          final directory = await getTemporaryDirectory();
+          final filePath = '${directory.path}/user_response_video.mp4';
 
-        await _cameraController.startVideoRecording();
+          await _cameraController.startVideoRecording();
 
-        setState(() {
-          _videoFilePath = filePath;
-          isRecording = true;
-        });
+          setState(() {
+            _videoFilePath = filePath;
+            isRecording = true;
+          });
 
-        print('Video will be saved to: $filePath');
+          print('Video will be saved to: $filePath');
+        }
       } catch (e) {
         print('Error starting video recording: $e');
       }
@@ -303,11 +326,6 @@ class _TherapistPageState extends State<TherapistPage> with SingleTickerProvider
                       ],
                     ),
                   ),
-                  // if (!isCameraActive)
-                  //   ElevatedButton(
-                  //     onPressed: _toggleCamera,
-                  //     child: Text("Turn Camera On"),
-                  //   ),
                 ],
               ),
             ),

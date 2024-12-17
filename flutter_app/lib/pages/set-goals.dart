@@ -73,24 +73,50 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
   Future<void> _submitGoal() async {
     FocusScope.of(context).unfocus();
 
-    final goalTitle = _goalTitleController.text;
+    final goalTitle = _goalTitleController.text.isEmpty ? 'Meditation' : _goalTitleController.text;
     final description = _descriptionController.text;
     final deadline = _deadlineController.text;
 
-    if (goalTitle.isEmpty || description.isEmpty || deadline.isEmpty) {
-      _showSnackBar('Please fill out all fields.');
+    // Validation for goal type
+    if (deadline.isEmpty) {
+      _showSnackBar('Please select a deadline.');
       return;
     }
+
+    if (_goalType == "Custom" && (goalTitle.isEmpty || description.isEmpty)) {
+      _showSnackBar('Please fill out all fields for a custom goal.');
+      return;
+    }
+
+    // Adjust the deadline to 11:59 PM of the selected date
+    final adjustedDeadline = _selectedDeadline != null
+        ? DateTime(
+      _selectedDeadline!.year,
+      _selectedDeadline!.month,
+      _selectedDeadline!.day,
+      23,
+      59,
+      59,
+    )
+        : null;
+
+    final now = DateTime.now().toLocal(); // Get local time
+    final timeZoneOffset = now.timeZoneOffset;
+    final offsetSign = timeZoneOffset.isNegative ? '-' : '+';
+    final offsetHours = timeZoneOffset.inHours.abs().toString().padLeft(2, '0');
+    final offsetMinutes = (timeZoneOffset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+
+    final createdAt = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(now)}$offsetSign$offsetHours:$offsetMinutes";
 
     final url = Uri.parse('${globals.api_base_url}/set_goal');
     final goalData = {
       "goal_type": _goalType, // Add the selected goal type
       "goal_title": goalTitle,
       "description": description,
-      "deadline": deadline,
+      "deadline": adjustedDeadline?.toIso8601String(),
       "progress": 0, // Initially setting progress to 0
       "status": "in-progress", // Default status
-      "created_at": DateTime.now().toIso8601String(),
+      "created_at": createdAt,
     };
 
     try {
@@ -101,7 +127,7 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
       );
 
       if (response.statusCode == 201) {
-        _showSnackBar('Goal "$goalTitle" set successfully!');
+        _showSnackBar('Goal set successfully!');
         _fetchGoals();
         _clearForm();
       } else {
@@ -183,10 +209,25 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
                 ],
               ),
               const SizedBox(height: 16.0),
-              _buildTextField('Goal', _goalTitleController, 'Enter your goal ...', textTheme, theme),
-              const SizedBox(height: 16.0),
-              _buildTextField('Goal Description', _descriptionController, 'Describe your goal...', textTheme, theme, maxLines: 3),
-              const SizedBox(height: 16.0),
+              if (_goalType == 'Custom') ...[
+                _buildTextField(
+                  'Goal',
+                  _goalTitleController,
+                  'Enter your goal ...',
+                  textTheme,
+                  theme,
+                ),
+                const SizedBox(height: 16.0),
+                _buildTextField(
+                  'Goal Description',
+                  _descriptionController,
+                  'Describe your goal...',
+                  textTheme,
+                  theme,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16.0),
+              ],
               _buildDeadlineField(context, textTheme, theme),
               const SizedBox(height: 12.0),
               Center(
@@ -199,7 +240,7 @@ class _SetGoalsPageState extends State<SetGoalsPage> {
                     ),
                   ),
                   onPressed: _submitGoal,
-                  child: Text(
+                  child: const Text(
                     'Set Goal',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,

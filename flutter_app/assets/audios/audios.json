@@ -1,38 +1,46 @@
 [
-    {
-      "title": "1-minute-final",
-      "path": "1-minute-final.mp3"
-    },
-    {
-      "title": "4-minute-final",
-      "path": "4-minute-final.mp3"
-    },
-    {
-      "title": "10-minute-Brach-final",
-      "path": "10-minute-Brach-final.mp3"
-    },
-    {
-      "title": "12-Intentions-of-Gratitude",
-      "path": "12-Intentions-of-Gratitude.mp3"
-    },
-    {
-      "title": "20151008-guy_armstrong-imsrc-big_mind_guided_meditation",
-      "path": "20151008-guy_armstrong-imsrc-big_mind_guided_meditation.mp3"
-    },
-    {
-      "title": "Body-Scan",
-      "path": "Body-Scan.mp3"
-    },
-    {
-      "title": "bodyscan",
-      "path": "bodyscan.mp3"
-    },
-    {
-      "title": "Compassion-10.05.22-AM",
-      "path": "Compassion-10.05.22-AM.mp3"
-    },
-    {
-      "title": "Two-Minutes-of-Mindful-Breathing",
-      "path": "Two-Minutes-of-Mindful-Breathing.mp3"
-    }
+  {
+    "title": "1 Minute Mindfulness Meditation",
+    "path": "1-minute-final.mp3"
+  },
+  {
+    "title": "4 Minute Meditation",
+    "path": "4-minute-final.mp3"
+  },
+  {
+    "title": "10 Minute Meditation",
+    "path": "10-minute-Brach-final.mp3"
+  },
+  {
+    "title": "12 Intentions of Gratitude",
+    "path": "12-Intentions-of-Gratitude.mp3"
+  },
+  {
+    "title": "Big Mind",
+    "path": "20151008-guy_armstrong-imsrc-big_mind_guided_meditation.mp3"
+  },
+  {
+    "title": "Body Scan",
+    "path": "Body-Scan.mp3"
+  },
+  {
+    "title": "Body Scan 2",
+    "path": "bodyscan.mp3"
+  },
+  {
+    "title": "Compassion",
+    "path": "Compassion-10.05.22-AM.mp3"
+  },
+  {
+    "title": "Deep Relaxation For Sleep",
+    "path": "Deep-Relaxation-for-Sleep.mp3"
+  },
+  {
+    "title": "Emotional Reactions to Pain",
+    "path": "2010-01-28_InesFreedman_EmotionalReactionsToPain.mp3"
+  },
+  {
+    "title": "Finding Ease",
+    "path": "Oren_J_Sofer_FindingEase1.mp3"
+  }
 ]

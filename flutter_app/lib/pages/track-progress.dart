@@ -104,6 +104,7 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
           itemBuilder: (context, index) {
             final goal = goals[index];
             double currentProgress = goal['progress'].toDouble();
+            int stars = goal['stars'] ?? 0; // Safely handle missing stars field
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -115,12 +116,30 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      goal['goal_title'],
-                      style: theme.textTheme.bodyLarge!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            goal['goal_title'],
+                            style: theme.textTheme.bodyLarge!.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          children: List.generate(
+                            stars,
+                                (index) => const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 20.0,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8.0),
                     Text(goal['description']),
@@ -175,6 +194,7 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
           itemBuilder: (context, index) {
             final goal = goals[index];
             double currentProgress = goal['progress'].toDouble();
+            int stars = goal['stars'] ?? 0; // Safely handle missing stars field
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -186,12 +206,30 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      goal['goal_title'],
-                      style: theme.textTheme.bodyLarge!.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            goal['goal_title'],
+                            style: theme.textTheme.bodyLarge!.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          children: List.generate(
+                            stars,
+                                (index) => const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 20.0,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8.0),
                     Text(goal['description']),
@@ -228,6 +266,7 @@ class _TrackProgressPageState extends State<TrackProgressPage> {
       ],
     );
   }
+
 
   Future<void> _updateGoalProgress(String goalId, double newProgress) async {
     String url = '${globals.api_base_url}/update_goal/$goalId';

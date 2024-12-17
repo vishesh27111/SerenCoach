@@ -1,24 +1,34 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
-import '../themes/app_theme.dart';
-import '../globals.dart' as globals; // Import globals
+import '../globals.dart' as globals;
+import 'ArticleDetailPage.dart';
 
 class Article {
   final String id;
   final String url;
   final String title;
+  final String imageUrl;
+  final String summary;
 
-  Article({required this.id, required this.url, required this.title});
+  Article({
+    required this.id,
+    required this.url,
+    required this.title,
+    required this.imageUrl,
+    required this.summary,
+  });
 
   factory Article.fromJson(Map<String, dynamic> json) {
     return Article(
-      id: json['_id'],
+      id: json['_id'].toString(), // Convert _id to string
       url: json['url'],
       title: json['title'],
+      imageUrl: json['image_url'],
+      summary: json['summary'],
     );
   }
+
 }
 
 class ArticleListPage extends StatefulWidget {
@@ -28,6 +38,12 @@ class ArticleListPage extends StatefulWidget {
 
 class _ArticleListPageState extends State<ArticleListPage> {
   late Future<List<Article>> articles;
+
+  @override
+  void initState() {
+    super.initState();
+    articles = fetchArticles();
+  }
 
   Future<List<Article>> fetchArticles() async {
     final response = await http.get(Uri.parse('${globals.api_base_url}/articles'));
@@ -41,20 +57,12 @@ class _ArticleListPageState extends State<ArticleListPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    articles = fetchArticles();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Articles',
-        ),
+        title: Text('Helpful Resources'),
       ),
       body: FutureBuilder<List<Article>>(
         future: articles,
@@ -69,33 +77,72 @@ class _ArticleListPageState extends State<ArticleListPage> {
               itemCount: articles.length,
               itemBuilder: (context, index) {
                 final article = articles[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 4,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    title: Text(
-                      article.title,
-                      style: theme.textTheme.headlineLarge!.copyWith(
-                        fontSize: 18,
-                        color: theme.colorScheme.primary,
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ArticleDetailPage(
+                          // article: article
+                          articleUrl: article.url,
+                          articleTitle: article.title,
+                        ),
                       ),
+                    );
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    trailing: Icon(
-                      Icons.open_in_new,
-                      color: AppTheme.lightTheme.colorScheme.secondary,
+                    elevation: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                          child: Image.network(
+                            article.imageUrl,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              return progress == null
+                                  ? child
+                                  : Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 180,
+                                color: Colors.grey[300],
+                                child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                              );
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                article.title,
+                                style: theme.textTheme.titleLarge!.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                article.summary,
+                                style: theme.textTheme.bodyMedium,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    onTap: () async {
-                      if (await canLaunch(article.url)) {
-                        await launch(article.url);
-                      } else {
-                        throw 'Could not launch ${article.url}';
-                      }
-                    },
                   ),
                 );
               },

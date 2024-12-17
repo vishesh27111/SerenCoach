@@ -307,7 +307,7 @@ class _GratitudeJournalPageState extends State<GratitudeJournalPage> {
   }
 
   Future<void> _saveEntry(String description) async {
-    final apiUrl = Uri.parse('${globals.api_base_url}/log');
+    final apiUrl = Uri.parse('${globals.api_base_url}/add_log');
     final String formattedDate = selectedDate.toIso8601String().split("T")[0];
 
     final entryData = {
@@ -363,6 +363,9 @@ class DescriptionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     return Column(
       children: [
         AppBar(
@@ -387,6 +390,13 @@ class DescriptionPage extends StatelessWidget {
           onPressed: () {
             onSubmit(descriptionController.text);
           },
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+            backgroundColor: theme.colorScheme.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
           child: Text("Submit",
             style: TextStyle(
               fontSize: 18,

@@ -3,14 +3,19 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../globals.dart' as globals;
 import '../service/NotificationService.dart';
+import 'package:my_flutter_app/pages/gratitude-journaling.dart';
+import 'package:my_flutter_app/pages/guided-meditation.dart';
+import 'package:my_flutter_app/pages/combat.dart';
+import 'package:my_flutter_app/pages/emergency.dart';
+import 'package:my_flutter_app/pages/ai-chat.dart';
 
 class Detection extends StatefulWidget {
-  final List<Map<String, String>> conversationHistory; // Not displayed
-  final List<Map<String, String>> suggestedActivities; // Added for activities
+  final List<Map<String, String>> conversationHistory;
+  final List<Map<String, String>> suggestedActivities;
 
   Detection({
     required this.conversationHistory,
-    required this.suggestedActivities, // Added for activities
+    required this.suggestedActivities,
   });
 
   @override
@@ -20,7 +25,8 @@ class Detection extends StatefulWidget {
 class _DetectionState extends State<Detection> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  bool _showActivities = false; // For controlling when to show activities
+
+  bool _showActions = false; // To control when to show the actions
 
   @override
   void initState() {
@@ -31,13 +37,10 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
     _controller.forward();
-    // await ActivityStorage.saveActivities(widget.suggestedActivities);
 
-
-    // Delay increased to 10 seconds to give enough time to read predictions
     Future.delayed(const Duration(seconds: 9), () {
       setState(() {
-        _showActivities = true;
+        _showActions = true;
       });
     });
 
@@ -51,11 +54,10 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
   Future<void> _saveConversation() async {
     final url = Uri.parse('${globals.api_base_url}/save_chat');
     final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({'conversation': widget.conversationHistory});
+    final body = {'conversation': widget.conversationHistory};
 
     try {
-      final response = await http.post(url, headers: headers, body: body);
-
+      final response = await http.post(url, headers: headers, body: jsonEncode(body));
       if (response.statusCode == 201) {
         print('Conversation saved successfully');
       } else {
@@ -63,6 +65,16 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
       }
     } catch (e) {
       print('Error saving conversation: $e');
+    }
+  }
+
+  int getLevel(String anxiety, String depression) {
+    if (anxiety == "low" && depression == "low") {
+      return 0;
+    } else if (anxiety == "high" || depression == "high") {
+      return 2;
+    } else {
+      return 1;
     }
   }
 
@@ -74,6 +86,29 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    var anxiety = globals.anxiety ?? "low";
+    var depression = globals.depression ?? "low";
+    globals.level = getLevel(anxiety, depression); // Set the level in globals
+
+    List<Map<String, dynamic>> actions;
+    if (globals.level == 0) {
+      actions = [
+        {'title': 'Guided Meditation', 'widget': MeditationPage()},
+        {'title': 'Gratitude Journalling', 'widget': GratitudeJournalPage()},
+        {'title': 'Self-help resources from experts', 'widget': ArticleListPage()},
+      ];
+    } else if (globals.level == 1) {
+      actions = [
+        {'title': 'Guided Meditation', 'widget': MeditationPage()},
+        {'title': 'Chat with AI Therapist', 'widget': ChatWithTherapistPage()},
+      ];
+    } else {
+      actions = [
+        {'title': 'Chat with AI Therapist', 'widget': ChatWithTherapistPage()},
+        {'title': 'Seek Urgent Help', 'widget': EmergencyPage()},
+      ];
+    }
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -93,7 +128,6 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
               ),
               SizedBox(height: 20),
 
-              // Keep the avatar fixed in its position to avoid it moving up
               CircleAvatar(
                 radius: 125,
                 backgroundColor: Colors.transparent,
@@ -104,9 +138,9 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                   ),
                 ),
               ),
-              SizedBox(height: 2),
+              SizedBox(height: 20),
 
-              if (!_showActivities) ...[
+              if (!_showActions) ...[
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: Column(
@@ -117,76 +151,75 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Your anxiety level is ${globals.anxiety}',
+                        'Your anxiety level is $anxiety',
                         style: TextStyle(fontSize: 18),
                       ),
                       Text(
-                        'Your depression level is ${globals.depression}',
+                        'Your depression level is $depression',
                         style: TextStyle(fontSize: 18),
                       ),
                     ],
                   ),
                 ),
               ] else ...[
-                SizedBox(height: 10),
                 Text(
-                  'Some Suggested Activities for You:',
+                  'Check out these helpful therapies',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
+                SizedBox(height: 20),
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,  // This ensures the list takes only the required space
-                    physics: NeverScrollableScrollPhysics(), // Disables scrolling if not necessary
-                    itemCount: widget.suggestedActivities.length,
+                    shrinkWrap: true,
+                    physics: BouncingScrollPhysics(),
+                    itemCount: actions.length,
                     itemBuilder: (context, index) {
-                      var activity = widget.suggestedActivities[index];
-                      return ExpansionTile(
-                        title: Text(
-                          activity['activity'] ?? '',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              activity['description'] ?? '',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontSize: 16,
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black,
-                              ),
+                      var action = actions[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        child: ListTile(
+                            title: Text(
+                              action['title'] ?? '',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20),
                             ),
-                          ),
-                        ],
+                            trailing: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.primary),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => action['widget'], // Use the widget defined in actions
+                                ),
+                              );
+                            }
+                        ),
                       );
                     },
                   ),
                 ),
-
-                ElevatedButton(
-                  onPressed: () async {
-                    await NotificationService.scheduleImmediateAndHourlyNotifications(widget.suggestedActivities);
-
-                    Navigator.pushReplacementNamed(context, '/home');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await NotificationService.scheduleImmediateAndHourlyNotifications(widget.suggestedActivities);
+                      Navigator.pushReplacementNamed(context, '/home');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Go to Home',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                    child: Text(
+                      'Go to Home',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -198,4 +231,3 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     );
   }
 }
-

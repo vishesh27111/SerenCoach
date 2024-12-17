@@ -13,6 +13,7 @@ import logging
 from werkzeug.utils import secure_filename
 from bson.json_util import dumps
 from keys import openai_key
+from datetime import timezone
 
 openai.api_key = openai_key
 logging.basicConfig(level=logging.DEBUG)
@@ -150,7 +151,7 @@ def set_goal():
         'goal_title': data.get('goal_title'),
         'description': data.get('description'),
         'deadline': datetime.fromisoformat(data.get('deadline')),
-        'created_at': datetime.utcnow(),
+        'created_at': datetime.fromisoformat(data.get('created_at')),
         'progress': data.get('progress', 0),
         'status': data.get('status', 'in-progress'),
         'stars': 1,
@@ -187,6 +188,9 @@ def update_goal(goal_id):
     if 'deadline' in data:
         update_fields['deadline'] = datetime.fromisoformat(data['deadline'])
 
+    if 'status' in data:
+        update_fields['status'] = data['status']
+
     # Update the goal document in MongoDB
     result = goals_collection.update_one(
         {'_id': ObjectId(goal_id)},
@@ -207,7 +211,16 @@ def get_goals():
     for goal in goals:
         goal['_id'] = str(goal['_id'])
         goal['deadline'] = goal['deadline'].isoformat()
-        goal['created_at'] = goal['created_at'].isoformat()
+        # goal['created_at'] = goal['created_at'].isoformat()
+        # Ensure created_at is in ISO 8601 format
+        if isinstance(goal['created_at'], datetime):
+            goal['created_at'] = goal['created_at'].isoformat()
+        elif isinstance(goal['created_at'], str):
+            # It's already a string, so we don't call isoformat()
+            pass
+        else:
+            # Handle cases where created_at is missing or invalid
+            goal['created_at'] = None
 
     return jsonify(goals), 200
 
@@ -277,7 +290,7 @@ def add_log():
         "description": data['description'],
     }
     result = logs_collection.insert_one(entry)
-    return jsonify({"message": "Entry added", "id": str(result.inserted_id)}), 201
+    return jsonify({"message": "Entry added", "id": str(result.inserted_id)}), 200
 
 
 @app.route('/logs/<date>', methods=['GET'])
@@ -304,22 +317,19 @@ def get_meditations():
     meditations = list(meditations_collection.find({}, {"_id": 0}))
     return jsonify(meditations)
 
+
 @app.route('/articles', methods=['GET'])
 def get_articles():
     """Retrieve all articles."""
-    articles = list(articles_collection.find({}, {"_id": 1, "type": 1, "url": 1, "title": 1}))
-    for article in articles:
-        article['_id'] = str(article['_id'])  # Convert ObjectId to string
-    return jsonify(articles)
+    # Include image_url and summary fields in the projection
+    articles = list(
+        articles_collection.find({}, {"_id": 1, "type": 1, "url": 1, "title": 1, "image_url": 1, "summary": 1}))
 
-@app.route('/articles/<article_id>', methods=['GET'])
-def get_article_by_id(article_id):
-    """Retrieve a single article by ID."""
-    article = articles_collection.find_one({"_id": ObjectId(article_id)})
-    if article:
+    # Convert ObjectId to string for each article
+    for article in articles:
         article['_id'] = str(article['_id'])
-        return jsonify(article)
-    return jsonify({"error": "Article not found"}), 404
+
+    return jsonify(articles)
 
 @app.route('/total_stars', methods=['GET'])
 def calculate_total_stars():
@@ -338,4 +348,4 @@ def calculate_total_stars():
 
 
 if __name__ == "__main__":
-    app.run(debug = True, host = '0.0.0.0', port = 5000)
+    app.run(debug = True, host = '0.0.0.0', port=5000)

@@ -13,25 +13,54 @@ import '../globals.dart' as globals; // Import globals
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    var anxiety = globals.anxiety ?? "low"; // Default to "low" if null
-    var depression = globals.depression ?? "low"; // Default to "low" if null
+  _HomePageState createState() => _HomePageState();
+}
 
-    int level = getLevel(anxiety, depression);
-    List<SmallTile> tiles = getTilesForLevel(level, context);
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    fetchStars();
+    checkGoalsForExpiration(); // Call this function when the page loads
+  }
 
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-    ValueNotifier<int> totalStarsNotifier = ValueNotifier<int>(0);
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  ValueNotifier<int> totalStarsNotifier = ValueNotifier<int>(0);
+  // HomePage({Key? key}) : super(key: key);
+  int level = globals.level;
 
-    void fetchStars() async {
-      int stars = await _fetchTotalStars();
-      totalStarsNotifier.value = stars;
+  void fetchStars() async {
+    int stars = await _fetchTotalStars();
+    totalStarsNotifier.value = stars;
+  }
+
+  void checkGoalsForExpiration() async {
+    try {
+      final response = await http.get(Uri.parse('${globals.api_base_url}/goals'));
+      if (response.statusCode == 200) {
+        final goals = json.decode(response.body) as List;
+        for (var goal in goals) {
+          DateTime deadline = DateTime.parse(goal['deadline']);
+          if (goal['status'] == 'in-progress' && deadline.isBefore(DateTime.now())) {
+            // Goal is past the deadline, mark it as expired
+            await _updateGoalStatus(goal['_id'], 'expired');
+          }
+        }
+      }
+    } catch (e) {
+      // Handle error
+      print('Error checking goals for expiration: $e');
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
+
+    List<SmallTile> tiles = getTilesForLevel(level, context);
 
     return Scaffold(
       key: scaffoldKey,
@@ -91,34 +120,33 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      'SerenCoach',
-                      style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        'SerenCoach',
+                        style: Theme.of(context).textTheme.headlineLarge!.copyWith(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 40.0),
-                  const MainTile(),
-                  const SizedBox(height: 20.0),
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16.0,
-                      crossAxisSpacing: 16.0,
-                      childAspectRatio: 1.0,
-                      children: tiles,
-                    ),
-                  ),
-                ],
+                    const SizedBox(height: 40.0),
+                    const MainTile(),
+                    const SizedBox(height: 20.0),
+
+                    // Personalized Features Section
+                    _buildPersonalizedFeatures(level, context),
+
+                    // Common Features Section
+                    _buildCommonFeatures(tiles, context),
+                  ],
+                ),
               ),
             ),
             Positioned(
@@ -140,7 +168,78 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // Return the tiles to display based on level
+  Widget _buildPersonalizedFeatures(int level, BuildContext context) {
+    final personalizedTiles = getTilesForLevel(level, context)
+        .where((tile) => tile.text != 'Set Goals' && tile.text != 'Your Conversations' && tile.text != 'Track Progress')
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recommended therapies for you',
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          GridView.builder(
+            shrinkWrap: true, // Allows GridView to adjust height
+            physics: NeverScrollableScrollPhysics(), // Disables GridView's scrolling
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16.0,
+              crossAxisSpacing: 16.0,
+              childAspectRatio: 1.0,
+            ),
+            itemCount: personalizedTiles.length,
+            itemBuilder: (context, index) {
+              return personalizedTiles[index];
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommonFeatures(List<SmallTile> tiles, BuildContext context) {
+    final commonTiles = tiles.where((tile) => tile.text == 'Set Goals' || tile.text == 'Your Conversations' || tile.text == 'Track Progress').toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Activity',
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16.0,
+              crossAxisSpacing: 16.0,
+              childAspectRatio: 1.0,
+            ),
+            itemCount: commonTiles.length,
+            itemBuilder: (context, index) {
+              return commonTiles[index];
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   List<SmallTile> getTilesForLevel(int level, BuildContext context) {
     List<SmallTile> alwaysDisplayedTiles = [
       SmallTile(
@@ -204,7 +303,7 @@ class HomePage extends StatelessWidget {
           color: Colors.deepPurple,
         ),
         SmallTile(
-          text: 'Combat anxiety and depression',
+          text: 'Self-help resources from experts',
           avatarPath: 'assets/images/combat.png',
           onTap: () {
             Navigator.push(
@@ -289,13 +388,22 @@ class HomePage extends StatelessWidget {
     }
   }
 
-  int getLevel(String anxiety, String depression) {
-    if (anxiety == "low" && depression == "low") {
-      return 0;
-    } else if (anxiety == "high" || depression == "high") {
-      return 2;
-    } else {
-      return 1;
+  Future<void> _updateGoalStatus(String goalId, String status) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${globals.api_base_url}/update_goal/$goalId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'status': status}),
+      );
+
+      if (response.statusCode == 200) {
+        print('Goal $goalId status updated to $status');
+      } else {
+        print('Failed to update goal status: ${response.body}');
+      }
+    } catch (e) {
+      print('Error updating goal status: $e');
     }
   }
+
 }

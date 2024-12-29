@@ -22,8 +22,9 @@ class WelcomePage extends StatelessWidget {
               Text(
                 'SerenCoach',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Colors.blueAccent,
                   letterSpacing: 1.2,
+                  fontSize: 36,
                 ),
               ),
               SizedBox(height: 10),
@@ -31,23 +32,36 @@ class WelcomePage extends StatelessWidget {
                 'Talk to your therapist. Anytime, Anywhere.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Theme.of(context).colorScheme.secondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.blueAccent,
                 ),
               ),
               SizedBox(height: 40),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pushNamed('/therapist');
+              //   },
+              //   style: ElevatedButton.styleFrom(
+              //     backgroundColor: Theme.of(context).colorScheme.primary,
+              //     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              //     shape: RoundedRectangleBorder(
+              //       borderRadius: BorderRadius.circular(30),
+              //     ),
+              //   ),
+              //   child: Text(
+              //     'Get Started',
+              //     style: TextStyle(
+              //       fontSize: 20,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.white,
+              //     ),
+              //   ),
+              // ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushNamed('/therapist');
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
                 child: Text(
                   'Get Started',
                   style: TextStyle(
@@ -56,12 +70,17 @@ class WelcomePage extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                ),
               ),
               SizedBox(height: 20),
               Text(
                 'Your mental health matters.',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Theme.of(context).colorScheme.secondary,
                 ),
               ),

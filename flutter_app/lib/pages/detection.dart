@@ -22,8 +22,8 @@ class Detection extends StatefulWidget {
   _DetectionState createState() => _DetectionState();
 }
 
-class _DetectionState extends State<Detection> with SingleTickerProviderStateMixin {
-
+class _DetectionState extends State<Detection>
+    with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
@@ -40,7 +40,8 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     final body = {'conversation': widget.conversationHistory};
 
     try {
-      final response = await http.post(url, headers: headers, body: jsonEncode(body));
+      final response =
+      await http.post(url, headers: headers, body: jsonEncode(body));
       if (response.statusCode == 201) {
         print('Conversation saved successfully');
       } else {
@@ -61,18 +62,30 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
     }
   }
 
+  // Helper function to calculate dynamic sizes
+  double getDynamicSize(double baseSize) {
+    final screenWidth = MediaQuery
+        .of(context)
+        .size
+        .width;
+    return (screenWidth / 390) * baseSize; // 390 is the iPhone 13 Pro Max width
+  }
+
   @override
   Widget build(BuildContext context) {
     var anxiety = globals.anxiety ?? "low";
     var depression = globals.depression ?? "low";
-    globals.level = getLevel(anxiety, depression); // Set the level in globals
+    globals.level = getLevel(anxiety, depression);
 
     List<Map<String, dynamic>> actions;
     if (globals.level == 0) {
       actions = [
         {'title': 'Guided Meditation', 'widget': MeditationPage()},
         {'title': 'Gratitude Journalling', 'widget': GratitudeJournalPage()},
-        {'title': 'Self-help resources from experts', 'widget': ArticleListPage()},
+        {
+          'title': 'Self-help resources from experts',
+          'widget': ArticleListPage()
+        },
       ];
     } else if (globals.level == 1) {
       actions = [
@@ -86,229 +99,177 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
       ];
     }
 
+    // // Helper function to calculate dynamic sizes
+    // double getDynamicSize(double baseSize) {
+    // final screenWidth = MediaQuery.of(context).size.width;
+    // return (screenWidth / 390) * baseSize; // 390 is the iPhone 13 Pro Max width
+    // }
+
     // Anxiety Color and Text
-    Color anxietyColor;
-    String anxietyLevelText;
-    if (anxiety == 'low') {
-      anxietyColor = Colors.green;
-      anxietyLevelText = 'Low';
-    } else if (anxiety == 'medium') {
-      anxietyColor = Colors.orange;
-      anxietyLevelText = 'Medium';
-    } else {
-      anxietyColor = Colors.red;
-      anxietyLevelText = 'High';
-    }
+    Color anxietyColor = anxiety == 'low'
+        ? Colors.green
+        : (anxiety == 'medium' ? Colors.orange : Colors.red);
+    String anxietyLevelText = '${anxiety[0].toUpperCase()}${anxiety.substring(1)
+        .toLowerCase()}';
 
     // Depression Color and Text
-    Color depressionColor;
-    String depressionLevelText;
-    if (depression == 'low') {
-      depressionColor = Colors.green;
-      depressionLevelText = 'Low';
-    } else if (depression == 'medium') {
-      depressionColor = Colors.orange;
-      depressionLevelText = 'Medium';
-    } else {
-      depressionColor = Colors.red;
-      depressionLevelText = 'High';
-    }
+    Color depressionColor = depression == 'low'
+        ? Colors.green
+        : (depression == 'medium' ? Colors.orange : Colors.red);
+    String depressionLevelText = '${depression[0].toUpperCase()}${anxiety
+        .substring(1).toLowerCase()}';
 
     return Scaffold(
       body: Padding(
-        // padding: const EdgeInsets.all(16.0),
-        padding: const EdgeInsets.only(
-          top: 90, // Padding from the top
-          left: 30, // Padding from the left
-          right: 30, // Padding from the right
+        padding: EdgeInsets.only(
+          top: getDynamicSize(90),
+          left: getDynamicSize(30),
+          right: getDynamicSize(30),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            // SerenCoach Title as Header
+            // Header
             Center(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center, // Ensure horizontal centering
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ClipOval(
                     child: Image.asset(
                       'assets/images/therapist_avatar.png',
-                      width: 50, // Set the width of the image
-                      height: 50, // Set the height of the image
-                      fit: BoxFit.cover, // Ensure the image fills the circular area without distortion
+                      width: getDynamicSize(50),
+                      height: getDynamicSize(50),
+                      fit: BoxFit.cover,
                     ),
-                  ), // Avatar
-                  const SizedBox(width: 10), // Space between the image and text
+                  ),
+                  SizedBox(width: getDynamicSize(10)),
                   Text(
                     "SerenCoach",
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 35,
+                    style: TextStyle(
+                      fontSize: getDynamicSize(35),
                       fontWeight: FontWeight.w700,
                       color: Colors.blueAccent,
                     ),
-                  ), // SerenCoach
+                  ),
                 ],
               ),
             ),
+            SizedBox(height: getDynamicSize(20)),
 
-            SizedBox(height: 20),
-
-            // Prediction Display in One Card (Full Width)
+            // Prediction Card
             Container(
-              width: double.infinity, // Ensure the card takes full width
+              width: double.infinity,
               child: Card(
-                color: Colors.white,  // Set background color to white
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(getDynamicSize(16)),
+                ),
                 elevation: 5,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(getDynamicSize(16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Anxiety Level Label and Result
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Anxiety Level:  ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.black,  // Label color is black
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            anxietyLevelText,
-                            style: TextStyle(
-                              fontSize: 26, // Increased font size
-                              fontWeight: FontWeight.w600,
-                              color: anxietyColor, // Result color based on anxiety level
-                              fontStyle: FontStyle.italic, // Different font style for results
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 16),
-
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Depression Level:  ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.black,  // Label color is black
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            depressionLevelText,
-                            style: TextStyle(
-                              fontSize: 26, // Increased font size
-                              fontWeight: FontWeight.w600,
-                              color: depressionColor, // Result color based on depression level
-                              fontStyle: FontStyle.italic, // Different font style for results
-                            ),
-                          ),
-                        ],
-                      )
-                      // Depression Level Label and Result
-
+                      _buildLevelRow(
+                          'Anxiety Level:', anxietyLevelText, anxietyColor,
+                          context),
+                      SizedBox(height: getDynamicSize(16)),
+                      _buildLevelRow('Depression Level:', depressionLevelText,
+                          depressionColor, context),
                     ],
                   ),
                 ),
               ),
             ),
+            SizedBox(height: getDynamicSize(60)),
 
-            SizedBox(height: 60),
-
-            // Helpful Therapies Section
-            // Helpful Therapies Section
+            // Therapies Section
             Container(
-              width: double.infinity, // Ensures the container spans full width
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.blue.shade50, // Background color for the section
-                borderRadius: BorderRadius.circular(16), // Rounded corners for the section
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(getDynamicSize(16)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.3), // Subtle shadow
+                    color: Colors.grey.withOpacity(0.3),
                     spreadRadius: 3,
                     blurRadius: 6,
-                    offset: Offset(0, 3), // Shadow position
+                    offset: Offset(0, 3),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(getDynamicSize(16)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section Title
                     Text(
                       'Check out these helpful therapies:',
                       style: TextStyle(
-                        fontSize: 25,
+                        fontSize: getDynamicSize(25),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-
-                    SizedBox(height: 1),
-                    // List of Therapy Cards
+                    SizedBox(height: getDynamicSize(1)),
                     ListView.builder(
-                      shrinkWrap: true, // Ensures the ListView doesn't expand infinitely
-                      physics: NeverScrollableScrollPhysics(), // Prevents inner scrolling
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
                       itemCount: actions.length,
                       itemBuilder: (context, index) {
                         return Card(
-                          margin: EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          margin: EdgeInsets.symmetric(
+                              vertical: getDynamicSize(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                getDynamicSize(12)),
+                          ),
                           elevation: 4,
                           child: InkWell(
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => actions[index]['widget']),
+                                MaterialPageRoute(builder: (
+                                    context) => actions[index]['widget']),
                               );
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              padding: EdgeInsets.symmetric(
+                                vertical: getDynamicSize(12),
+                                horizontal: getDynamicSize(16),
+                              ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade100, // Background color of each card
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.blue.shade100,
+                                borderRadius: BorderRadius.circular(
+                                    getDynamicSize(12)),
                               ),
                               child: Row(
                                 children: [
-                                  // Icon or Placeholder (Optional)
                                   CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: Colors.blueAccent.withOpacity(0.3),
+                                    radius: getDynamicSize(20),
+                                    backgroundColor: Colors.blueAccent
+                                        .withOpacity(0.3),
                                     child: Icon(
-                                      Icons.favorite, // Replace with a suitable icon
+                                      Icons.favorite,
                                       color: Colors.blueAccent,
                                     ),
                                   ),
-                                  SizedBox(width: 16),
-
-                                  // Therapy Title
+                                  SizedBox(width: getDynamicSize(16)),
                                   Expanded(
                                     child: Text(
                                       actions[index]['title'],
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: getDynamicSize(18),
                                         fontWeight: FontWeight.w500,
                                         color: Colors.black87,
                                       ),
                                     ),
                                   ),
                                   Icon(
-                                    Icons.arrow_forward_ios, // Navigation arrow
+                                    Icons.arrow_forward_ios,
                                     color: Colors.blueAccent,
-                                    size: 16,
+                                    size: getDynamicSize(16),
                                   ),
                                 ],
                               ),
@@ -322,11 +283,11 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
               ),
             ),
 
-            // Go to Home Button
+            // Home Button
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(getDynamicSize(16)),
               child: Align(
-                alignment: Alignment.centerRight, // Align button to the right
+                alignment: Alignment.centerRight,
                 child: ElevatedButton(
                   onPressed: () async {
                     Navigator.pushNamed(context, '/home');
@@ -335,23 +296,53 @@ class _DetectionState extends State<Detection> with SingleTickerProviderStateMix
                   child: Text(
                     'Go to Home',
                     style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white, // Change font color to white
+                      fontSize: getDynamicSize(18),
+                      color: Colors.white,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: EdgeInsets.symmetric(
+                      vertical: getDynamicSize(16),
+                      horizontal: getDynamicSize(32),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(getDynamicSize(8)),
+                    ),
                   ),
                 ),
               ),
             ),
-
           ],
         ),
       ),
     );
+  }
 
+  Widget _buildLevelRow(String label, String level, Color color,
+      BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: getDynamicSize(24),
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(width: getDynamicSize(8)),
+        Text(
+          level,
+          style: TextStyle(
+            fontSize: getDynamicSize(26),
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 }
+
